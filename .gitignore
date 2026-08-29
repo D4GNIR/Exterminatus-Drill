@@ -1,0 +1,59 @@
+# ---------------------------------------------------------------------------
+# Motherload 40K : Exterminatus Drill — .gitignore (Godot 4.x)
+# Posé en story 0.3, AVANT la création du projet Godot (story 1.1), afin que
+# le cache d'import ne soit jamais suivi par erreur.
+# ---------------------------------------------------------------------------
+
+# --- Cache et données générées par Godot ---
+# Godot 4 : tout le cache d'import et les données d'éditeur vivent dans .godot/
+.godot/
+# Godot 3 (héritage) : ancien dossier de cache d'import, ne doit jamais réapparaître
+.import/
+# Note : les fichiers "<asset>.import" placés À CÔTÉ des assets sont, eux,
+# VERSIONNÉS en Godot 4 (ils portent l'UID de la ressource). Ne pas les ignorer.
+
+# --- Exports et builds ---
+export.cfg
+export_presets.cfg
+build/
+builds/
+export/
+exports/
+*.pck
+*.zip
+*.exe
+*.dmg
+*.apk
+*.aab
+*.x86_64
+*.wasm
+
+# --- Traductions compilées (regénérées depuis les .csv/.po) ---
+*.translation
+
+# --- Fichiers temporaires ---
+*.tmp
+*.bak
+*.swp
+*.log
+*~
+
+# --- Système de fichiers / OS ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# --- Éditeurs et IDE ---
+.vscode/
+.idea/
+*.code-workspace
+
+# --- Mono / C# (non utilisé au MVP, gardé par précaution) ---
+.mono/
+data_*/
+mono_crash.*.json
