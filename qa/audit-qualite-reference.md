@@ -89,7 +89,9 @@ Référence CDC : sections « Règles autorisées » et « Règles interdites ou
 - [ ] G5 Aucune traversée de tuile indestructible, de bord de carte ou de plafond de zone.
 - [ ] G6 Aucun usage de consommable pendant : animation de destruction, interface ouverte, cinématique, état de mort.
 - [ ] G7 Les consommables respectent stock **et** cooldown.
-- [ ] G8 La soute ne dépasse jamais sa capacité ; le dépassement est géré explicitement (refus de collecte ou perte, décidé en story — pas un débordement silencieux).
+- [ ] G8 La soute ne dépasse jamais sa capacité ; le dépassement est géré explicitement — **Q5 : tuile détruite, minerai perdu** (le forage n'est pas empêché), jamais un débordement silencieux.
+- [ ] G9 **[B]** **Alerte de soute pleine antérieure à la perte** (Q5) : l'émission de l'alerte (signal `cargo_full` ou équivalent) précède, dans le code, toute destruction de minerai non collecté. Un ordre inverse — perte puis alerte — ou une alerte conditionnée à la perte est un KO bloquant.
+- [ ] G10 La perte de minerai en soute pleine est **observable** : signal/compteur exposé au HUD (message ou total perdu). Une perte silencieuse, même correcte fonctionnellement, est un KO.
 
 ## H. Robustesse et état
 
@@ -99,6 +101,9 @@ Référence CDC : sections « Règles autorisées » et « Règles interdites ou
 - [ ] H4 La pause (`get_tree().paused`) est cohérente avec les `process_mode` des nœuds UI.
 - [ ] H5 Sauvegarde : écriture dans `user://`, lecture tolérante à un fichier absent, corrompu ou d'une version antérieure.
 - [ ] H6 Aucune ressource lourde chargée dans `_process` / `_physics_process` (`load()` en boucle).
+- [ ] H7 **[B]** **Aucune sauvegarde automatique** (Q7) : l'écriture dans `user://` n'est appelée que depuis une action explicite du joueur. Aucun appel déclenché par un `Timer`, par l'entrée en zone de surface, par une vente, par un changement de scène ou par `NOTIFICATION_WM_CLOSE_REQUEST` / `_exit_tree()`. Vérifiable en listant tous les appelants de la fonction de sauvegarde.
+- [ ] H8 Garde-fous Q7 présents : rappel **non bloquant** au retour en surface quand la progression n'est pas sauvegardée, et confirmation avant de quitter dans le même cas. Le rappel ne met pas le jeu en pause et n'exige aucun clic.
+- [ ] H9 Un indicateur d'état « progression non sauvegardée » existe dans `GameState` (drapeau positionné à chaque mutation persistante, remis à zéro à la sauvegarde) — sinon H8 n'est pas fiabilisable.
 
 ## I. Cohérence documentaire **[B]**
 
@@ -116,6 +121,17 @@ Référence CDC : sections « Règles autorisées » et « Règles interdites ou
 - [ ] J3 `project.godot` est syntaxiquement cohérent (`config_version=5`, autoloads valides, `run/main_scene` pointant vers une scène existante).
 - [ ] J4 Aucun plugin/addon ajouté sans story ni annonce préalable.
 - [ ] J5 Les chemins référencés dans les `.tscn` (`ExtResource`) pointent vers des fichiers réellement présents.
+
+## K. Génération de terrain et déterminisme **[B]**
+
+Référence : arbitrage **Q6** du 2026-08-29 (terrain semi-procédural dès le MVP) · CDC « Backlog après MVP » (périmètre remonté en phase 3, écart assumé).
+
+- [ ] K1 **[B]** **Graine de génération explicite et forçable** : la graine est une donnée nommée, lisible et surchargeable (constante de configuration ou `data/*.json`), **journalisée au démarrage** de la partie. Aucun `randomize()` implicite, aucun `randi()`/`randf()` global : tout l'aléa de génération passe par une instance `RandomNumberGenerator` dédiée et ensemencée.
+- [ ] K2 **[B]** **Déterminisme** : à graine identique, la génération produit un terrain identique. Aucune dépendance à l'ordre d'exécution, au temps, au nombre d'images ou à l'état du joueur dans le flux de génération.
+- [ ] K3 **[B]** **Ancrages déterministes indépendants de la graine** : la zone de surface et l'emplacement de l'anomalie scénarisée sont posés hors du flux aléatoire (coordonnées fixes ou dérivées de constantes), donc identiques quelle que soit la graine. Un ancrage tiré au sort est un KO bloquant : il rend la progression narrative aléatoire.
+- [ ] K4 **[B]** La génération garantit une **ceinture de tuiles `destructible=false` sur tout le pourtour** de la carte (bords latéraux et fond), sans discontinuité, quelle que soit la graine — complète G5.
+- [ ] K5 Les paramètres de génération (seuils de strates, densités de minerai par profondeur, dimensions de carte) sont externalisés en `data/*.json` conformément à D1 — pas de nombre magique dans le générateur.
+- [ ] K6 La graine effectivement utilisée est **restituée au testeur** (log ou écran de debug) : sans elle, aucun rapport de test manuel n'est exploitable (cf. prérequis `P4` de `qa/plan-tests-manuels.md`).
 
 ---
 

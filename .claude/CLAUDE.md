@@ -46,7 +46,7 @@ Chaque fichier doit comporter au moins :
 
 - Ne **pas** démarrer la story tests si l'audit n'est pas **Autorisé**.
 - Ne **pas** commiter la phase tant que les deux stories du sprint ne sont pas **Terminée** (en plus des stories dev du sprint).
-- Exemples : `1.6` audit → `1.7` tests · `3.8` audit → `3.9` tests (gate vertical slice).
+- Exemples réels du projet : `0.4` audit → `0.5` revue · `1.7` audit → `1.8` tests · `3.7` audit → `3.8` tests (gate vertical slice). Les couples exacts font foi dans `stories/BACKLOG.md`.
 
 ## Commits Git (obligatoire à la fin de chaque phase)
 

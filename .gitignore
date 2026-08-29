@@ -57,3 +57,9 @@ desktop.ini
 .mono/
 data_*/
 mono_crash.*.json
+
+# --- Réglages locaux d'outillage (propres à un poste, jamais versionnés) ---
+# Les règles du projet (.claude/CLAUDE.md, README.md, agents/) restent VERSIONNÉES :
+# seuls les réglages locaux sont exclus. Posé en story 0.8 : la machine de dev
+# l'excluait via ~/.config/git/ignore, ce qui n'est pas portable sur un clone frais.
+.claude/settings.local.json
