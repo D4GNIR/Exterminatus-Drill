@@ -20,6 +20,11 @@ Chaque fichier doit comporter au moins :
 6. **Référence cahier des charges** : sections concernées
 7. **Notes / décisions** (rempli au fur et à mesure)
 
+> **Le cahier des charges est en deux documents** (arbitrage `Q16` du 2026-09-06, story `1.10`) :
+> `cahier_des_charges_motherload_40k_godot.md`, la référence principale, **amendée par** `cahier_des_charges_gameplay_addictif.md`.
+> **Préséance** : l'amendement fait foi pour le loot, l'économie, la courbe de risque et la durée de boucle ; le CDC principal fait foi pour l'univers, les contrôles, les règles de forage, l'architecture Godot et les données de tuile.
+> Le champ « Référence cahier des charges » d'une story doit **nommer le document** en plus de la section quand la story touche à l'un de ces quatre domaines.
+
 ## Règles de mise à jour
 
 - **Avant** de commencer une tâche : passer le statut à En cours.
@@ -46,7 +51,7 @@ Chaque fichier doit comporter au moins :
 
 - Ne **pas** démarrer la story tests si l'audit n'est pas **Autorisé**.
 - Ne **pas** commiter la phase tant que les deux stories du sprint ne sont pas **Terminée** (en plus des stories dev du sprint).
-- Exemples réels du projet : `0.4` audit → `0.5` revue · `1.7` audit → `1.8` tests · `3.7` audit → `3.8` tests (gate vertical slice). Les couples exacts font foi dans `stories/BACKLOG.md`.
+- Exemples réels du projet : `0.4` audit → `0.5` revue · `1.7` audit → `1.8` tests. Les couples des phases ≥ 2 sont **prévisionnels** et se déplacent à chaque insertion de story : ne les recopie pas ici, **les couples exacts font foi dans `stories/BACKLOG.md`**, tableau de la phase concernée.
 
 ## Commits Git (obligatoire à la fin de chaque phase)
 

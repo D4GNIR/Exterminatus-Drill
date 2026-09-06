@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "commentaire": "Catalogue narratif (CDC section « Scenario »). Story 1.5 : structure posee et exercee par le chargeur ; le contenu est ecrit en phase 6 (stories 6.2 a 6.4). `condition_declenchement.type` designe la nature de la condition, `valeur` son seuil. `flag` est l'identifiant du drapeau pose dans GameState : il porte a lui seul l'unicite du declenchement (un evenement dont le flag est deja pose ne se rejoue pas), aucun champ supplementaire n'est necessaire. `locuteur` est l'emetteur radio par defaut des lignes de l'evenement.",
+  "types_condition": [
+    "profondeur_min_m"
+  ],
+  "evenements": [
+    {
+      "id": "anomalie_necropole",
+      "nom_affiche": "Signal de la necropole",
+      "actif_mvp": true,
+      "condition_declenchement": {
+        "type": "profondeur_min_m",
+        "valeur": 200
+      },
+      "flag": "anomalie_necropole_decouverte",
+      "locuteur": "tech_pretre",
+      "lignes_de_dialogue": [
+        "Opérateur 77-Delta, tes capteurs relaient une signature que la machine ne sait pas nommer.",
+        "Sous toi, la roche n'est plus de la roche : quelque chose de pré-impérial y dort, et il compte.",
+        "Poursuis le forage. Consigne l'anomalie. Ne l'écoute pas."
+      ]
+    }
+  ]
+}

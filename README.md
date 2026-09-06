@@ -57,6 +57,7 @@ godot                          # lance le jeu (mode graphique)
 ```text
 MotherloadW40k/
 ├─ cahier_des_charges_motherload_40k_godot.md   Cahier des charges de référence (le « quoi »)
+├─ cahier_des_charges_gameplay_addictif.md      Amendement : mécaniques de rétention (Q16, périmètre MVP)
 ├─ README.md                                    Ce fichier
 ├─ .gitignore                                   Exclusions Godot 4 (.godot/, exports, temporaires)
 ├─ .claude/                                     Méthodologie, conventions et agents du projet
@@ -105,6 +106,7 @@ Le projet avance **une story à la fois**, par phases (1 phase = 1 sprint = 1 co
 se clôt par deux gates : un audit qualité de code, puis une session de tests manuels humains.
 
 - Besoin fonctionnel : [`cahier_des_charges_motherload_40k_godot.md`](cahier_des_charges_motherload_40k_godot.md)
+- Amendement « gameplay addictif » (loot pondéré, progression infinie, risque croissant, boucle 3-8 min — **périmètre MVP**) : [`cahier_des_charges_gameplay_addictif.md`](cahier_des_charges_gameplay_addictif.md)
 - Plan de travail et traçabilité MVP : [`stories/BACKLOG.md`](stories/BACKLOG.md)
 - Avancement, risques et écarts : [`stories/AVANCEMENT.md`](stories/AVANCEMENT.md)
 - Gate qualité et tests : [`qa/README.md`](qa/README.md)

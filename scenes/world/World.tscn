@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://dewhr0lq7rkwb"]
+
+[node name="World" type="Node2D"]
+
+[node name="TerrainLayer" type="TileMapLayer" parent="."]
+
+[node name="OreLayer" type="TileMapLayer" parent="."]
+
+[node name="DecorationsLayer" type="TileMapLayer" parent="."]
+
+[node name="Hazards" type="Node2D" parent="."]

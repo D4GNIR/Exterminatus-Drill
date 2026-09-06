@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "commentaire": "Catalogue des minerais (CDC section « Ressources »). Story 1.5. Les `id` sont DEFINITIFS : ils servent de `resource_id` dans les Custom Data Layers du TileSet (story 3.1) et de clefs de soute dans les sauvegardes (story 7.1). `valeur_credits` alimente la donnee de tuile `value`, `hardness_min` la donnee `hardness`, `hazard_type` la donnee `hazard_type`. `actif_mvp=false` : la ressource est decrite mais le generateur de terrain (story 3.2) ne doit JAMAIS la placer au MVP.",
+  "ressources": [
+    {
+      "id": "fer_industriel",
+      "nom_affiche": "Fer industriel",
+      "rarete": "commune",
+      "valeur_credits": 12,
+      "hardness_min": 1,
+      "masse_soute": 1,
+      "risque": "aucun",
+      "hazard_type": "",
+      "actif_mvp": true
+    },
+    {
+      "id": "cuivre",
+      "nom_affiche": "Cuivre",
+      "rarete": "commune",
+      "valeur_credits": 20,
+      "hardness_min": 1,
+      "masse_soute": 1,
+      "risque": "aucun",
+      "hazard_type": "",
+      "actif_mvp": false
+    },
+    {
+      "id": "promethium_brut",
+      "nom_affiche": "Promethium brut",
+      "rarete": "peu_commune",
+      "valeur_credits": 45,
+      "hardness_min": 2,
+      "masse_soute": 1,
+      "risque": "inflammable",
+      "hazard_type": "promethium",
+      "actif_mvp": false
+    },
+    {
+      "id": "adamantium",
+      "nom_affiche": "Adamantium",
+      "rarete": "rare",
+      "valeur_credits": 180,
+      "hardness_min": 3,
+      "masse_soute": 2,
+      "risque": "roche_dure",
+      "hazard_type": "",
+      "actif_mvp": true
+    },
+    {
+      "id": "cristaux_plasma",
+      "nom_affiche": "Cristaux plasma",
+      "rarete": "tres_rare",
+      "valeur_credits": 420,
+      "hardness_min": 4,
+      "masse_soute": 2,
+      "risque": "instabilite",
+      "hazard_type": "plasma",
+      "actif_mvp": false
+    },
+    {
+      "id": "relique_xeno",
+      "nom_affiche": "Relique xeno",
+      "rarete": "exceptionnelle",
+      "valeur_credits": 1000,
+      "hardness_min": 5,
+      "masse_soute": 3,
+      "risque": "declencheur_narratif",
+      "hazard_type": "warp",
+      "actif_mvp": false
+    }
+  ]
+}

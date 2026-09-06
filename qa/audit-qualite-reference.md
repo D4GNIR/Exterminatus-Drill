@@ -5,6 +5,7 @@ Document de **référence** de la story « Audit qualité code » de fin de spri
 - Audit **statique + vérifications headless** : tout point portant sur la syntaxe, le chargement d'une scène ou la validité de `project.godot` doit être étayé par une commande `godot --headless` et sa sortie (voir `qa/README.md` §4).
 - Chaque point se répond par **OK / KO / N/A**, avec **preuve** (fichier + ligne) en cas de KO.
 - **Un seul KO bloquant suffit à rendre le verdict `KO`.**
+- Référence fonctionnelle : `cahier_des_charges_motherload_40k_godot.md`, **amendé par `cahier_des_charges_gameplay_addictif.md`** (arbitrage **Q16** du 2026-09-06, story `1.10`). Les sections `L` et `M`, ainsi que les points `K7` à `K9`, en découlent directement.
 
 ---
 
@@ -75,7 +76,9 @@ Référence CDC : section « Contrôles ».
 - [ ] F1 **[B]** **Aucun scancode / touche en dur** dans le code (`Key.KEY_Z`, `event.keycode == ...`) : tout passe par l'Input Map.
 - [ ] F2 **[B]** Les 12 actions du CDC existent dans `project.godot` : `move_up`, `move_down`, `move_left`, `move_right`, `drill`, `brake`, `use_item_1`, `use_item_2`, `use_item_3`, `toggle_inventory`, `toggle_journal`, `pause`.
 - [ ] F3 Les touches par défaut correspondent au CDC (ZQSD + flèches, Espace, Shift, 1/2/3, I/Tab, J, Échap).
-- [ ] F4 La lecture d'input est faite au bon endroit (`_unhandled_input` pour les actions UI/ponctuelles, `Input.is_action_pressed` dans `_physics_process` pour le mouvement continu) ; les entrées consommées par l'UI ne fuient pas vers le gameplay.
+- [ ] **F4 [B]** La lecture d'input est faite au bon endroit (`_unhandled_input` pour les actions UI/ponctuelles, `Input.is_action_pressed` dans `_physics_process` pour le mouvement continu) ; les entrées consommées par l'UI ne fuient pas vers le gameplay.
+- [ ] **F5 [B]** *(arbitrage Q10)* **Aucun nœud de gameplay n'implémente `_input()`** — la lecture ponctuelle passe exclusivement par `_unhandled_input()`. Motif : `drill`/Espace, `pause`/Échap, `toggle_inventory`/Tab et les flèches partagent leurs touches avec les actions intégrées `ui_accept`, `ui_cancel`, `ui_focus_next` et `ui_up/down/left/right`. Un `_input()` dans le gameplay recevrait l'événement **avant** l'UI : Espace déclencherait le forage tout en validant un bouton. Contrôle : `grep -rn "func _input(" scripts/ scenes/` ne doit remonter aucun nœud de gameplay.
+- [ ] **F6** Toute UI modale (inventaire, boutique, pause, dialogue) appelle `set_input_as_handled()` ou consomme l'événement, de sorte qu'aucune action de jeu ne se déclenche derrière elle.
 - [ ] F5 Aucune action inutilisée n'est ajoutée hors CDC sans story.
 
 ## G. Règles de gameplay non négociables **[B]**
@@ -132,6 +135,40 @@ Référence : arbitrage **Q6** du 2026-08-29 (terrain semi-procédural dès le M
 - [ ] K4 **[B]** La génération garantit une **ceinture de tuiles `destructible=false` sur tout le pourtour** de la carte (bords latéraux et fond), sans discontinuité, quelle que soit la graine — complète G5.
 - [ ] K5 Les paramètres de génération (seuils de strates, densités de minerai par profondeur, dimensions de carte) sont externalisés en `data/*.json` conformément à D1 — pas de nombre magique dans le générateur.
 - [ ] K6 La graine effectivement utilisée est **restituée au testeur** (log ou écran de debug) : sans elle, aucun rapport de test manuel n'est exploitable (cf. prérequis `P4` de `qa/plan-tests-manuels.md`).
+
+*Points ajoutés le 2026-09-06 — amendement §2, arbitrage **Q19** (story `1.10`) :*
+
+- [ ] K7 **[B]** **Table de loot entièrement en données** : les poids de rareté par couche vivent dans `data/generation.json`, jamais dans le code. Aucune probabilité littérale, aucun seuil de rareté, aucune liste de raretés codée en dur dans le générateur ou dans `MiningSystem` — extension de `D1` et `K5`. Contrôle : la modification d'un poids dans le JSON change le comportement du jeu **sans recompilation ni édition de `.gd`**.
+- [ ] K8 **[B]** **Graine du tirage de loot journalisée** : le tirage de loot passe par le `RandomNumberGenerator` ensemencé de la génération, ou par une instance dédiée **elle aussi ensemencée depuis une donnée**. Aucun `randf()`/`randi()` global, aucun `randomize()` implicite. La graine effectivement employée est **journalisée au démarrage** et restituée au testeur (prolonge `K1` et `K6`, prérequis `P5` du plan de tests). Sans elle, `TM-3.17` est injouable et toute anomalie de drop devient indiagnosticable.
+- [ ] K9 **Aucune couche ne peut produire 0 % de drop** (règle de design §2.4) : la table de loot est **validée au chargement** — somme des poids strictement positive sur chaque couche, et poids de l'entrée « Rien » strictement inférieur au total. Une table qui violerait la règle provoque un **échec bruyant** au chargement, jamais un repli silencieux.
+- [ ] K10 Le tirage de loot ne peut **jamais** retourner une ressource marquée `actif_mvp: false` dans `data/resources.json` (contrainte **Q12**) : le filtrage est explicite dans le code ou garanti par la structure de la table.
+
+## L. Économie et progression infinie **[B]**
+
+Référence : amendement §3 (progression infinie) · arbitrage **Q18** du 2026-09-06 (`data/upgrades.json` en `schema_version: 2`). Section applicable à partir de la **phase 5**.
+
+- [ ] L1 **[B]** **Formule de coût paramétrable en données** : `base` et `facteur` sont déclarés par amélioration dans `data/upgrades.json`, et le coût est calculé par `cout = base × facteur^niveau`. Aucun tableau de paliers de coût codé en dur, aucune constante numérique de prix dans `EconomySystem` ni dans `Shop.tscn` — extension de `D1`.
+- [ ] L2 **[B]** **Aucun plafond dur** (règle de design §3.3) : pas de champ `niveau_max`, pas de `clamp`/`min` bornant le niveau d'amélioration par le haut, pas de branche « niveau maximal atteint ». Le coût doit être calculable pour un niveau arbitrairement grand. Un plafond, même lointain, est un KO bloquant : il contredit la mécanique de rétention centrale de l'amendement.
+- [ ] L3 Le calcul de coût est une **fonction pure et déterministe** — un seul point de calcul, sans effet de bord, appelable pour un niveau quelconque — et la règle d'arrondi est explicite et documentée (pas d'arrondi implicite divergeant entre l'affichage et le débit).
+- [ ] L4 **[B]** La migration `schema_version 1 → 2` **ne renomme aucun `id`** d'amélioration (contrainte **Q12** : `soute`, `reacteur`, `foret`, `blindage` sont définitifs, utilisés par le TileSet et les sauvegardes). La lecture reste tolérante à une sauvegarde écrite en `schema_version: 1` (prolonge `H5`).
+- [ ] L5 Les **4 stats upgradables minimum** du §3.2 existent, sont **actives au MVP** — *(arbitrage **Q21** : exactement `soute`, `reacteur`, `foret`, `blindage` ; aucun `id` nouveau, `blindage` basculé en `actif_mvp: true` avec des paliers supérieurs ; « profondeur max sûre » **reportée post-MVP**)* —, et chacune pilote une statistique **réellement consommée** par le gameplay — une amélioration dont l'effet n'est lu par aucun système est du code mort au sens de `B6`. Le niveau doit produire une **valeur** croissante, pas seulement un coût croissant (sinon la règle §3.3 « effet ressenti immédiatement » est inatteignable).
+- [ ] L6 La progression ne peut pas **bloquer** la partie : quel que soit l'état, le joueur conserve un moyen de regagner des crédits (prolonge le critère MVP « boucle non bloquante », `TM-5.8`).
+
+## M. Risque, dégâts et menaces **[B]**
+
+Référence : amendement §4 (risque croissant) · arbitrages **Q17** (qui **annule Q3 et Q8**) et **Q20** (première source de dégâts : chute et impact) du 2026-09-06.
+
+**Applicabilité — précisée par Q20** : la section est **pleinement applicable dès la phase 2**, et non plus à partir de la seule phase 6. Depuis Q20, le sprint 2 livre une source de dégâts réelle (chute et impact) **et** son consommateur : `M1`, `M4`, `M7` et `M8` sont donc auditables à l'audit `2.6`. `M2`, `M3`, `M5` et `M6`, qui portent sur les menaces par profondeur et sur la perte de cargo, restent `N/A` jusqu'à la phase 6.
+
+- [ ] M1 **[B]** **`ArmorSystem` est le seul point d'entrée de dégâts** : aucune écriture directe de `GameState.armor` depuis un autre nœud. Contrôle : tous les appelants de la mutation du blindage sont dans `ArmorSystem`. **Vaut pour les deux familles de dégâts** — impact (phase 2, `Q20`) et menaces par profondeur (phase 6, §4.2) : la seconde s'**ajoute** à la première et passe par le même point d'entrée, elle ne le contourne pas.
+- [ ] M2 **[B]** La **probabilité de rencontre hostile par profondeur** est une donnée externalisée (`data/*.json`), croissante d'un palier au suivant, conforme à l'ordre de grandeur du §4.2. Aucune probabilité en dur dans le code — extension de `D1`.
+- [ ] M3 **[B]** **La perte n'est jamais totale** (règle de design §4.3) : à blindage nul, le code ne supprime ni le fichier de sauvegarde, ni les crédits, ni les niveaux d'amélioration, ni les flags narratifs. Seule une **fraction du cargo** est perdue, et cette fraction est une **donnée**, pas une constante. Toute suppression de sauvegarde, toute remise à zéro de la progression et tout « game over » définitif sont des **KO bloquants**.
+- [ ] M4 L'état « foreuse détruite » est une **transition d'état explicite**, sans état intermédiaire jouable incohérent (le joueur ne peut ni forer ni se déplacer pendant la transition) — prolonge `H3`.
+- [ ] M5 **L'indicateur de danger est non chiffré** (règle de design §4.3) : aucune probabilité de rencontre, aucun pourcentage de risque n'est affiché au joueur. Le retour passe par la teinte d'écran et l'ambiance sonore, par palier de profondeur.
+- [ ] M6 **[B]** Le tirage de menace utilise un `RandomNumberGenerator` **distinct** de celui de la génération de terrain, lui aussi ensemencé depuis une donnée et journalisé. Partager l'instance décalerait la séquence du terrain dès la première rencontre et **casserait la reproductibilité `K2`** — donc toute la campagne de tests à graine fixe.
+- [ ] M7 Le blindage reste borné : jamais négatif, jamais supérieur au maximum (prolonge `H2`), et le maximum ne peut être nul (prolonge `H1`).
+- [ ] M8 **[B]** *(arbitrage **Q20**)* **Paramètres de dégâts d'impact externalisés** : le **seuil de vitesse** en deçà duquel aucun dégât n'est infligé et le **coefficient** de conversion vitesse → dégâts sont des données (`data/drill.json`, fichier créé par la story `2.2` au titre de **Q15**). Aucune constante d'impact en dur dans `ArmorSystem` ni dans `DrillRig` — extension de `D1`. Le seuil doit exister et être non nul : sans lui, le déplacement ordinaire grignoterait le blindage et rendrait le jeu punitif.
+- [ ] M9 *(arbitrage **Q20**)* **Source et consommateur livrés ensemble** : au sprint qui introduit l'`ArmorSystem`, une source de dégâts réelle l'appelle. Un `ArmorSystem` sans appelant est du **code mort** au sens de `B6` — c'est précisément ce que Q20 ferme, et le point ne peut pas être répondu `N/A` par commodité.
 
 ---
 

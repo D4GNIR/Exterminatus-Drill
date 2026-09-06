@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "commentaire": "Catalogue des ameliorations (CDC section « Ameliorations ») et etat de depart d'une nouvelle partie. Story 1.5. Les `id` sont DEFINITIFS : ils sont deja utilises par GameState et par les sauvegardes (story 7.1). `statistique` designe la grandeur pilotee par l'amelioration : c'est par elle que GameState resout ses valeurs de depart, sans dupliquer aucun chiffre (le palier de depart est le palier de plus petit `niveau`). La colonne « Statut de depart » du CDC correspond donc au palier 1, de cout nul et non achetable. `actif_mvp=false` : categorie decrite mais absente de la boutique du MVP.",
+  "nouvelle_partie": {
+    "credits_depart": 0
+  },
+  "ameliorations": [
+    {
+      "id": "soute",
+      "nom_affiche": "Soute",
+      "description": "Capacite de stockage du minerai extrait, en unites de masse.",
+      "statistique": "capacite_soute",
+      "actif_mvp": true,
+      "paliers": [
+        { "niveau": 1, "cout_credits": 0, "valeur": 50 },
+        { "niveau": 2, "cout_credits": 400, "valeur": 75 },
+        { "niveau": 3, "cout_credits": 900, "valeur": 110 },
+        { "niveau": 4, "cout_credits": 1800, "valeur": 160 }
+      ]
+    },
+    {
+      "id": "reacteur",
+      "nom_affiche": "Reacteur",
+      "description": "Capacite maximale du reservoir de carburant.",
+      "statistique": "carburant_max",
+      "actif_mvp": true,
+      "paliers": [
+        { "niveau": 1, "cout_credits": 0, "valeur": 100 },
+        { "niveau": 2, "cout_credits": 350, "valeur": 150 },
+        { "niveau": 3, "cout_credits": 800, "valeur": 220 },
+        { "niveau": 4, "cout_credits": 1600, "valeur": 320 }
+      ]
+    },
+    {
+      "id": "foret",
+      "nom_affiche": "Foret",
+      "description": "Puissance du foret. Une tuile n'est detruite que si la puissance atteint sa durete (`hardness`).",
+      "statistique": "puissance_foret",
+      "actif_mvp": true,
+      "paliers": [
+        { "niveau": 1, "cout_credits": 0, "valeur": 2 },
+        { "niveau": 2, "cout_credits": 500, "valeur": 3 },
+        { "niveau": 3, "cout_credits": 1200, "valeur": 4 },
+        { "niveau": 4, "cout_credits": 2500, "valeur": 5 }
+      ]
+    },
+    {
+      "id": "blindage",
+      "nom_affiche": "Blindage",
+      "description": "Points de structure de la foreuse. Hors MVP : la jauge est affichee mais aucun systeme ne la decremente (arbitrage Q3). Seul le palier de depart est declare ; les paliers superieurs viendront avec les dangers, en post-MVP.",
+      "statistique": "blindage_max",
+      "actif_mvp": false,
+      "paliers": [
+        { "niveau": 1, "cout_credits": 0, "valeur": 100 }
+      ]
+    }
+  ]
+}

@@ -14,7 +14,7 @@ Tu es le **développeur** de **Motherload 40K : Exterminatus Drill**, un jeu 2D 
 
 1. Lis **`.claude/CLAUDE.md`** (règles « convention stories/ ») et respecte-les à la lettre. En cas de doute, ces règles font foi.
 2. Lis la story à implémenter dans `stories/`, ainsi que ses dépendances.
-3. Lis les sections concernées de **`cahier_des_charges_motherload_40k_godot.md`** (le CDC de référence, à la racine).
+3. Lis les sections concernées de **`cahier_des_charges_motherload_40k_godot.md`** (le CDC de référence, à la racine), **et de son amendement `cahier_des_charges_gameplay_addictif.md`** (arbitrage `Q16`, story `1.10`) dès que la story touche au loot, à l'économie, aux améliorations, aux dégâts ou au risque lié à la profondeur : sur ces quatre domaines, **c'est l'amendement qui fait foi**, le CDC principal restant la référence pour l'univers, les contrôles, les règles de forage, l'architecture Godot et les données de tuile.
 
 ## Cycle de travail imposé
 
@@ -81,6 +81,7 @@ Règles d'usage :
 - Lance toujours ces commandes **depuis la racine du projet** (là où vit `project.godot`).
 - **Le premier `--import` est obligatoire** après avoir ajouté des assets : sans lui, les `.tscn` référençant des ressources non importées échoueront.
 - Une commande headless qui écrit des `ERROR:` ou `SCRIPT ERROR:` sur la sortie est un **échec**, même si le code de retour est 0 : lis réellement la sortie, ne te fie pas au seul exit code.
+- **Une seule exception, bornée** : en `--check-only`, un script qui référence un autoload produit un faux `Identifier not found: <autoload>` suivi de `Failed to load script`, ce mode ne démarrant pas le projet et n'enregistrant donc aucun identifiant d'autoload. Rejoue alors par `--headless --import` **et** `--headless --editor --quit` : c'est cette sortie qui fait foi. Toute autre occurrence d'`ERROR:` reste un échec. Conditions exactes : `qa/README.md` §4 (story `1.9`).
 - N'utilise **jamais** l'éditeur en mode graphique (pas de fenêtre dans cet environnement) : tout passe par `--headless`.
 
 **Ce que le headless ne prouve pas** : le rendu visuel, le ressenti de contrôle, l'équilibrage, l'audio et l'ergonomie de l'UI. Ces critères-là restent validés par un humain lors de la story **tests manuels humains** de fin de sprint. Distingue clairement, dans tes comptes rendus, ce que tu as **vérifié en headless** de ce qui reste **à valider visuellement**.

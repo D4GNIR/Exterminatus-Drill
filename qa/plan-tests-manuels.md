@@ -3,6 +3,8 @@
 Ce plan liste les cas de test **exécutés par l'humain dans Godot**, sprint par sprint.
 Les agents vérifient en amont ce qui est automatisable en headless ; ce plan ne couvre que ce qui exige un jugement humain à l'écran — cf. `qa/README.md` §4.
 
+Référence fonctionnelle : `cahier_des_charges_motherload_40k_godot.md`, **amendé par `cahier_des_charges_gameplay_addictif.md`** (arbitrage **Q16** du 2026-09-06, story `1.10`). Les cas ajoutés le 2026-09-06 portent la mention de leur § d'origine.
+
 - Chaque cas a un identifiant stable `TM-<phase>.<n>` : **ne pas renuméroter**.
 - Sévérité indicative : **B** = bloquant (interdit le commit de phase), **M** = majeur, **m** = mineur.
 - À chaque fin de sprint : exécuter les cas du sprint **+ les cas de régression** des sprints précédents marqués `[REG]`.
@@ -18,6 +20,8 @@ Les agents vérifient en amont ce qui est automatisable en headless ; ce plan ne
 | P2 | Le dépôt est cloné/ouvert localement | |
 | P3 | Le projet s'importe dans l'éditeur sans erreur d'import | |
 | P4 | **Graine de génération figée** pour toute la campagne de tests du sprint (à partir du sprint 3) : la graine est fixée avant le premier cas, notée dans le rapport, et **n'est pas modifiée** jusqu'au dernier cas — sauf pour les cas qui la font varier explicitement (`TM-3.14`, `TM-3.15`), après lesquels la graine de campagne est restaurée | à partir du sprint 3 |
+| P5 | **Graine du tirage de loot journalisée et reportée** (amendement §2) : la graine effectivement utilisée pour le tirage de loot est affichée au démarrage et **recopiée en en-tête du rapport**. Elle peut être la même que celle de la génération de terrain, mais elle doit être **lisible**. Sans elle, aucun cas de loot n'est rejouable et toute anomalie de drop est irrecevable | à partir du sprint 3 |
+| P6 | **Graine du tirage de menace journalisée** (amendement §4, arbitrage Q17) : le tirage de menace utilise un RNG **distinct** de celui de la génération ; sa graine est journalisée et reportée. Une rencontre hostile ne doit jamais décaler le terrain à graine identique | à partir du sprint 6 |
 
 > Si l'un des prérequis `P1` à `P3` n'est **pas** satisfait sur le poste de test, la story de tests manuels du sprint passe à **Bloquée**, pas à Terminée, et la cause est notée. `P1` étant satisfait depuis la story `0.6`, cette règle ne bloque plus la gate du sprint 1.
 
@@ -45,9 +49,9 @@ Les agents vérifient en amont ce qui est automatisable en headless ; ce plan ne
 | TM-1.2 `[REG]` | Lancement | `F5` | La scène principale se lance, fenêtre affichée, aucune erreur console | B |
 | TM-1.3 | Arborescence | Inspecter le *FileSystem* | `scenes/`, `scripts/`, `data/`, `assets/` conformes au CDC | M |
 | TM-1.4 | Input Map | *Project Settings > Input Map* | Les 12 actions du CDC existent, avec les touches par défaut attendues | B |
-| TM-1.5 | Test des touches | Lancer la scène de test d'input (ou lire l'Output) et presser chaque touche | Chaque action est bien reconnue une et une seule fois | M |
-| TM-1.6 | Autoload `GameState` | *Project Settings > Autoload* puis `F5` | `GameState` est chargé, ses valeurs initiales sont lisibles sans erreur | B |
-| TM-1.7 | Arbre de `Main.tscn` | Ouvrir `scenes/main/Main.tscn` | Hiérarchie conforme au CDC (World + 3 TileMapLayer + Hazards, Camera2D, UI/CanvasLayer) | M |
+| TM-1.5 ⏭ | ~~Test des touches~~ **→ exécuté au sprint 2** | *Non joué au sprint 1* : aucun code ne consomme les entrées avant la phase 2, et la « scène de test d'input » n'a volontairement pas été créée (elle serait un artefact de debug au sens du point d'audit A5). Voir le rappel en tête du sprint 2. | — | M |
+| TM-1.6 | Autoload `GameState` | *Projet > Paramètres du projet…* → onglet **AutoLoad** (« Chargements automatiques »), puis `F5` et, **pendant l'exécution**, dock **Scène** → sélecteur **Distant** | **Bloquant** : `GameData` puis `GameState` sont déclarés et activés, dans cet ordre (Q4), aucun autre autoload, et le jeu démarre sans erreur. **Non bloquant** : si l'Inspecteur distant les affiche, les valeurs initiales sont conformes — ce sont des variables **privées non exportées**, dont l'affichage n'est pas garanti. Leur non-affichage n'est **pas** un KO ; la vérification est alors **transférée à `TM-4.1`**. *Procédure corrigée par la story `1.12` : le vocabulaire initial (*Globals*, arbre distant dans le *Débogueur*) était du Godot 3.* | B |
+| TM-1.7 | Arbre de `Main.tscn` **et** de `World.tscn` | Ouvrir `scenes/main/Main.tscn`, puis `scenes/world/World.tscn` **séparément** | **En deux écrans** : `Main.tscn` affiche **8 nœuds** (`World` est une **instance** — l'éditeur n'affiche pas ses enfants) ; `World.tscn` ouverte seule affiche **5 nœuds** et **c'est là** que se constatent les 3 avertissements « TileSet manquant ». Total projet 12 nœuds, vérifié en deux temps. **Ne pas activer « Modifiable enfants »** sur `World`. *Procédure corrigée par la story `1.12`.* | M |
 | TM-1.8 | Chargement des données | Lancer le jeu | Les JSON de `data/` sont chargés sans erreur de parsing ; le nombre d'entrées est loggé | M |
 
 ---
@@ -56,6 +60,7 @@ Les agents vérifient en amont ce qui est automatisable en headless ; ce plan ne
 
 | ID | Cas | Procédure | Attendu | Sév. |
 |---|---|---|---|---|
+| TM-1.5 ⏮ | **Test des touches** *(reporté du sprint 1)* | Presser successivement chacune des 12 touches pendant une partie, en maintenant l'appui une seconde | Chaque action est reconnue **une et une seule fois par appui** — la répétition clavier (`echo`) ne redéclenche pas l'action ponctuelle. Identifiant conservé : un cas de test ne se renumérote pas. | M |
 | TM-2.1 `[REG]` | Déplacement 4 directions | Se déplacer dans un tunnel libre avec ZQSD puis les flèches | Déplacement fluide dans les 4 directions, les deux jeux de touches équivalents | B |
 | TM-2.2 `[REG]` | Directions opposées | Presser gauche+droite, puis haut+bas | **Aucun mouvement**, aucune vibration/oscillation, aucune erreur | B |
 | TM-2.3 | Gravité et chute | Se placer au-dessus d'un vide et lâcher les touches | La foreuse tombe, atterrit sans traverser le sol | B |
@@ -64,6 +69,8 @@ Les agents vérifient en amont ce qui est automatisable en headless ; ce plan ne
 | TM-2.6 `[REG]` | Collisions | Foncer contre un bloc non détruit dans chaque direction | Impossible de traverser, pas de blocage/téléportation | B |
 | TM-2.7 | Caméra | Se déplacer largement | La caméra suit sans saccade et ne sort pas des limites définies | m |
 | TM-2.8 `[REG]` | Panne sèche | Épuiser le carburant | Ni forage ni propulsion possibles ; la chute reste possible ; message/alerte clair | B |
+| TM-2.9 `[REG]` | **Dégâts de chute et d'impact** (Q20, amendement §4.3) | Trois chutes de hauteurs croissantes : (a) une chute courte, sous le seuil ; (b) une chute moyenne ; (c) la plus haute chute possible sur la carte. Relever la valeur de blindage avant et après chacune | (a) **aucun dégât** : sous le seuil, le déplacement normal n'est jamais punitif — un déplacement ordinaire qui grignote le blindage est un échec. (b) et (c) : le blindage est **réellement décrémenté** à l'écran, et les dégâts **croissent avec la vitesse d'impact** — la chute (c) coûte nettement plus que la (b). Consigner les 3 valeurs. Ce cas est la **preuve visible** que l'`ArmorSystem` a un appelant dès le sprint 2 | B |
+| TM-2.10 | **État de destruction de la foreuse** (Q17, Q20) | Enchaîner des chutes jusqu'à amener le blindage à **zéro** | La transition vers l'état « détruite » est **explicite et lisible** (retour visuel et sonore) ; le jeu ne plante pas, ne se fige pas, et la foreuse n'est ni pilotable ni capable de forer pendant la transition. **Au sprint 2, il n'y a encore ni cargo ni sauvegarde** : la vérification complète de la règle §4.3 (« la perte n'est jamais totale ») est faite par `TM-6.8`, une fois le cargo et la sauvegarde livrés. Ici, seul le comportement de l'état est jugé | M |
 
 ---
 
@@ -87,6 +94,11 @@ Les agents vérifient en amont ce qui est automatisable en headless ; ce plan ne
 | TM-3.14 `[REG]` | **Reproductibilité à graine identique** (Q6) | Forcer la graine `S`, noter le terrain sur 3 écrans (strates, positions de minerai). Quitter, relancer avec la **même** graine `S` | Les deux parties produisent un terrain **strictement identique** : mêmes strates, mêmes tuiles de minerai aux mêmes coordonnées | B |
 | TM-3.15 `[REG]` | **Ancrages déterministes indépendants de la graine** (Q6) | Lancer successivement 3 parties avec 3 graines différentes ; relever la position de la zone de surface et celle de l'emplacement de l'anomalie | Zone de surface et emplacement de l'anomalie sont **au même endroit dans les 3 parties** : ils ne dépendent pas de la graine. Au sprint 3 l'anomalie n'est qu'un marqueur — **le contrôle sur l'anomalie réelle est repris par `TM-6.6`**. Restaurer ensuite la graine de campagne (`P4`) | B |
 | TM-3.16 `[REG]` | **Bordures indestructibles sur tout le pourtour** (Q6) | Sur au moins 2 graines différentes, longer les 4 bords de la carte (gauche, droite, fond) et tenter d'y forer ; tenter de sortir par le haut hors zone de surface | Une ceinture de tuiles `destructible=false` est présente sur **tout** le pourtour, sans trou ; aucune destruction, aucune sortie de carte, quelle que soit la graine | B |
+| TM-3.17 `[REG]` | **Reproductibilité du loot à graine identique** (amendement §2.1, Q19) | Forcer la graine `S`, creuser une **séquence de tuiles notée** (par ex. 30 cases en descente droite) et relever, case par case, le drop obtenu et sa rareté. Quitter, relancer avec la **même** graine `S`, rejouer **exactement** la même séquence | Les deux parties produisent la **même suite de drops**, dans le même ordre, avec les mêmes raretés. Un seul écart invalide le déterminisme du tirage et interdit tout diagnostic d'équilibrage. Reporter la graine en en-tête du rapport (`P5`) | B |
+| TM-3.18 `[REG]` | **Jamais 0 % de drop, même à la surface** (règle de design §2.4) | Dans la **couche de surface** uniquement, creuser 100 tuiles minables et compter les drops non vides. Répéter sur une seconde graine | Au moins un drop non vide est obtenu sur les 100 cases, sur **chacune** des deux graines. Aucune couche du jeu ne peut renvoyer « Rien » systématiquement : c'est la règle de design §2.4, le joueur doit être en tension dès la première case. Consigner le nombre de drops obtenus | B |
+| TM-3.19 | **Feedback de drop rare** (règle de design §2.4) | Jouer jusqu'à obtenir un drop de rareté haute (relique rare ou artefact légendaire). Si la rareté ne sort pas naturellement en 10 min, forcer temporairement les poids en éditant `data/generation.json`, puis **restaurer le fichier** | Le drop rare déclenche un retour **visuel** (lumière/flash) **et** un retour **sonore distinct** de celui d'un minerai commun. Le retour reste perceptible **suffisamment longtemps** pour être remarqué sans être cherché (repère indicatif : ≥ 1,5 s). Un drop rare visuellement identique à un drop commun est un échec | M |
+| TM-3.20 | **Gradient de rareté par profondeur** (amendement §2.2) | À graine de campagne fixe, creuser 50 tuiles dans la couche de surface, puis 50 dans la couche la plus profonde accessible. Relever la répartition des raretés dans chaque échantillon | La proportion de raretés hautes **augmente** visiblement avec la profondeur et celle de « Rien » diminue, dans le sens de la table §2.2. Ce cas mesure une tendance, pas des pourcentages exacts : consigner les deux répartitions dans le rapport, elles alimentent l'équilibrage de la story `7.6` | M |
+| TM-3.21 `[REG]` | **Aucune ressource inactive dans le loot** (Q12) | Sur au moins 2 graines, creuser 100 tuiles réparties sur toutes les couches accessibles et relever l'identifiant de chaque ressource obtenue | Seules les ressources `actif_mvp: true` de `data/resources.json` apparaissent (au MVP : `fer_industriel` et `adamantium`). L'apparition d'une ressource inactive — `cuivre`, `promethium_brut`, `cristaux_plasma`, `relique_xeno` — est un échec bloquant. *Ce cas comble une contrainte Q12 qui, jusqu'au 2026-09-06, était annoncée sans être couverte* | B |
 
 ---
 
@@ -94,7 +106,7 @@ Les agents vérifient en amont ce qui est automatisable en headless ; ce plan ne
 
 | ID | Cas | Procédure | Attendu | Sév. |
 |---|---|---|---|---|
-| TM-4.1 `[REG]` | HUD temps réel | Jouer un cycle complet | Carburant, blindage, crédits, charge de soute et **profondeur** s'actualisent en temps réel | B |
+| TM-4.1 `[REG]` | HUD temps réel **+ valeurs de départ (transfert de `TM-1.6`)** | Lancer une **nouvelle partie** et relever les 5 valeurs au HUD **avant tout déplacement**, puis jouer un cycle complet | Carburant, blindage, crédits, charge de soute et **profondeur** s'actualisent en temps réel. **De plus (transfert depuis `TM-1.6` e-l, story `1.12`)** : au démarrage d'une partie neuve, le HUD affiche les valeurs de départ résolues depuis `data/upgrades.json` — carburant `100/100`, blindage `100/100`, crédits `0`, soute `0/50`, profondeur `0`. C'est **ici** que ces valeurs deviennent observables par un humain, les variables de `GameState` étant privées et non exportées | B |
 | TM-4.2 | Exactitude | Comparer les valeurs HUD avec l'état réel (soute pleine, crédits après vente) | Aucune désynchronisation | B |
 | TM-4.3 | Alertes | Descendre le carburant / le blindage sous le seuil, remplir la soute | Alerte visuelle distincte pour chaque cas | M |
 | TM-4.4 | Inventaire | `I` puis `Tab` | L'inventaire s'ouvre, **le jeu est en pause**, la refermeture rend la main | M |
@@ -116,7 +128,12 @@ Les agents vérifient en amont ce qui est automatisable en headless ; ce plan ne
 | TM-5.6 | Foret amélioré | Forer une roche dure avant/après amélioration du foret | Forage nettement plus rapide/possible après achat | M |
 | TM-5.7 | Crédits insuffisants | Tenter un achat trop cher | Achat refusé, message clair, aucun crédit négatif | B |
 | TM-5.8 `[REG]` | **Boucle complète non bloquante** | Partir, creuser, collecter, remonter, vendre, ravitailler, repartir — 3 cycles | Aucun blocage définitif de la partie (jamais coincé sans issue ni crédits) | B |
-| TM-5.9 | **Mesure du cumul Q5 × Q7** (point d'arbitrage) | Sur les 3 cycles de `TM-5.8`, relever : (a) le nombre d'unités de minerai perdues en soute pleine et leur valeur en crédits, (b) la valeur de la cargaison la plus élevée transportée sans sauvegarde | Le rapport de test **chiffre** les deux pertes potentielles. Ce cas ne peut pas échouer : il impose la mesure, pas un seuil. Il matérialise la réévaluation de l'interaction Q5 × Q7 annoncée au backlog — perte de minerai **et** absence de sauvegarde automatique se cumulent. **La décision d'ajuster ou de conserver le réglage revient à l'utilisateur, au vu de ces chiffres.** | B |
+| TM-5.9 | **Mesure du cumul Q5 × Q7** (point d'arbitrage) | Sur les 3 cycles de `TM-5.8`, relever : (a) le nombre d'unités de minerai perdues en soute pleine et leur valeur en crédits, (b) la valeur de la cargaison la plus élevée transportée sans sauvegarde | Le rapport de test **chiffre** les deux pertes potentielles. Ce cas ne peut pas échouer : il impose la mesure, pas un seuil. Il matérialise la réévaluation de l'interaction Q5 × Q7 annoncée au backlog — perte de minerai **et** absence de sauvegarde automatique se cumulent. **La décision d'ajuster ou de conserver le réglage revient à l'utilisateur, au vu de ces chiffres.** *(Depuis Q17, une troisième perte s'ajoute au cumul — la destruction de la foreuse — mais elle n'est jouable qu'au sprint 6 : elle est mesurée par `TM-6.8` puis au playtest `TM-7.11`.)* | B |
+| TM-5.10 `[REG]` | **Progression infinie, aucun plafond dur** (règle de design §3.3, Q18) | Pour **chaque** amélioration proposée, acheter des niveaux successifs jusqu'à épuisement des crédits, en notant le coût affiché à chaque palier | Aucun « niveau maximal atteint » n'apparaît, aucun bouton ne devient définitivement inactif : le **coût du niveau suivant est toujours affiché** et l'achat redevient possible dès que les crédits suffisent. Les coûts relevés doivent **croître de façon géométrique** (chaque coût est un multiple à peu près constant du précédent), conformément à `cout = base × facteur^niveau` | B |
+| TM-5.11 | **Coût atteignable en 1 à 3 descentes** (règle de design §3.3) | Sur 3 cycles complets, relever pour chaque amélioration : (a) le coût du prochain niveau, (b) le gain moyen en crédits d'une descente | Le rapport **chiffre** le nombre de descentes nécessaires pour chaque amélioration : `coût ÷ gain moyen`. Cible §3.3 : **entre 1 et 3**. Comme `TM-5.9`, ce cas impose la mesure et non un seuil bloquant ; hors de la fourchette, une story d'équilibrage est ouverte et le réglage est repris au playtest `TM-7.11`. **La décision revient à l'utilisateur** | B |
+| TM-5.12 | **Amélioration ressentie immédiatement** (règle de design §3.3) | Pour chaque amélioration, faire une descente de référence, acheter un niveau, refaire la **même** descente, et décrire la différence perçue **sans regarder le HUD** | La différence est **perceptible en jeu** : plus de minerai emporté avant d'être plein, forage sensiblement plus rapide, descente plus longue avant la panne sèche, dégâts visiblement mieux encaissés. Une amélioration dont on ne perçoit l'effet qu'en lisant un chiffre est un échec au sens du §3.3 | M |
+| TM-5.13 `[REG]` | **Quatrième amélioration : `blindage` achetable et ressentie** (Q21) | Vérifier que `Blindage` apparaît dans la boutique avec un coût **non nul** à partir du palier 2. Faire une chute de référence, relever le blindage perdu, acheter un niveau, refaire **exactement** la même chute | `blindage` est bien **actif et achetable** — il ne se limite plus au palier 1 de coût nul. Après achat, **la même chute coûte visiblement moins de blindage** : l'effet est ressenti dès la descente suivante (§3.3), sans avoir à lire un chiffre. Ce cas n'est jouable que parce que Q20 a livré une source de dégâts contrôlable par le joueur | B |
+| TM-5.14 | **Exactement quatre améliorations actives** (Q21) | Ouvrir la boutique et lister toutes les améliorations proposées | La boutique propose **exactement quatre** améliorations : `Soute`, `Réacteur`, `Foret`, `Blindage`. **Aucune amélioration « profondeur max sûre »** n'apparaît : elle est reportée post-MVP. Le minimum de 4 stats du §3.2 est donc satisfait sans `id` nouveau. Une cinquième entrée, ou l'absence de l'une des quatre, est un échec | M |
 
 ---
 
@@ -130,6 +147,10 @@ Les agents vérifient en amont ce qui est automatisable en headless ; ce plan ne
 | TM-6.4 | Flag narratif | Re-passer sur la zone après déclenchement | L'événement ne se rejoue pas ; le flag est bien mémorisé | B |
 | TM-6.5 | Journal | `J` | Le journal s'ouvre et reflète l'événement rencontré | m |
 | TM-6.6 | **Ancrages déterministes sur l'anomalie réelle** (Q6) | Lancer 3 parties avec 3 graines différentes ; descendre jusqu'à l'anomalie et relever sa position exacte, ainsi que celle de la zone de surface | L'anomalie et la surface sont **au même endroit dans les 3 parties**. Complète `TM-3.15`, qui ne pouvait vérifier qu'un marqueur au sprint 3, l'anomalie n'étant alors pas implémentée. Restaurer ensuite la graine de campagne (`P4`) | B |
+| TM-6.7 `[REG]` | **Courbe de risque croissante avec la profondeur** (amendement §4.1, §4.2, Q17) | Creuser **50 cases** dans chacun des 4 paliers de profondeur (0-50 m, 50-150 m, 150-300 m, 300 m+) et compter les rencontres hostiles déclenchées dans chaque palier | Le nombre de rencontres **croît strictement** d'un palier au suivant et suit l'ordre de grandeur de la table §4.2 (≈ 1, 4, 9, 18 rencontres sur 50 cases). Aucun palier profond ne doit rester **sans aucune** rencontre. Consigner les 4 comptages : ils alimentent l'équilibrage de `7.6`. Vérifier au passage que le terrain n'a **pas** été décalé par les combats à graine identique (`P6`) | B |
+| TM-6.8 `[REG]` | **La perte n'est JAMAIS totale** (règle de design §4.3, Q17 — annule Q8) | Sauvegarder en surface avec des crédits, des améliorations achetées et au moins un flag narratif posé. Descendre, remplir la soute, **se laisser détruire** par une menace. Observer l'état après destruction, puis inspecter `user://` | La partie **continue** : seule une **partie** du cargo est perdue. Sont **intacts** : le fichier de sauvegarde, les crédits, les niveaux d'amélioration et les flags narratifs. Aucun écran de « game over » définitif, aucune remise à zéro, aucune suppression de sauvegarde. La perte du cargo est **explicitement signalée** au joueur. Un seul de ces manquements est un échec **bloquant** : c'est la règle qui empêche le joueur d'associer le risque à une punition disproportionnée | B |
+| TM-6.9 | **Indicateur de danger progressif et non chiffré** (règle de design §4.3) | Descendre lentement et continûment de la surface jusqu'au palier le plus profond, en observant l'écran et en écoutant | La tension monte de façon **perceptible et graduelle** : teinte d'écran et/ou ambiance sonore évoluent au passage de chaque palier, sans transition brutale. **Aucun pourcentage de risque, aucun chiffre de danger n'est affiché au joueur.** Le testeur doit pouvoir dire « je sens que ça devient dangereux » sans avoir lu de valeur | M |
+| TM-6.10 | **Dilemme « remonter ou pousser »** (amendement §4.1) | Descendre avec une cargaison de valeur croissante, jusqu'à hésiter entre remonter vendre et continuer | Le joueur dispose à tout instant de ce qu'il faut pour arbitrer : profondeur, charge de soute, état du blindage, et la tension du danger — **sans qu'aucune probabilité ne lui soit donnée**. Le testeur consigne s'il a réellement hésité, et à quelle profondeur. Cas subjectif : il documente le ressenti visé par le §4.1, il n'échoue que si l'information de base manque | m |
 
 ---
 
@@ -147,6 +168,8 @@ Les agents vérifient en amont ce qui est automatisable en headless ; ce plan ne
 | TM-7.8 | **Rappel de sauvegarde au retour en surface** (Q7) | Descendre, collecter, remonter en zone de surface avec une progression non sauvegardée | Un rappel « progression non sauvegardée » s'affiche, **sans bloquer** : le joueur peut continuer à jouer, vendre, repartir ou ignorer le message sans clic obligatoire ; le rappel disparaît de lui-même ou se ferme sans figer le jeu | M |
 | TM-7.9 | **Confirmation avant de quitter** (Q7) | Avec une progression non sauvegardée, demander à quitter (menu pause et croix de la fenêtre) | Une confirmation explicite apparaît dans les deux cas et propose au minimum « quitter sans sauvegarder » / « annuler ». Refaire le test après une sauvegarde : la confirmation n'apparaît plus (ou signale une progression à jour) | M |
 | TM-7.10 `[REG]` | **Aucune sauvegarde automatique** (Q7) | Supprimer la sauvegarde, jouer un cycle complet (descente, collecte, retour surface, vente, achat, anomalie) **sans jamais** déclencher la sauvegarde, puis inspecter `user://` | **Aucun fichier de sauvegarde n'a été créé** : ni au retour en surface, ni à la vente, ni sur minuterie, ni à la fermeture du jeu. La sauvegarde n'existe qu'après une action volontaire du joueur | B |
+| TM-7.11 | **Durée de la boucle de session : 3 à 8 minutes** (amendement §5) | Chronométrer **3 boucles complètes** consécutives, chacune de la sortie de surface au retour au même point après vente et achat d'une amélioration. Ne pas interrompre le chrono ; noter les 3 durées et le contenu de chaque boucle | Les 3 durées sont consignées. Cible §5 : **chaque boucle entre 3 et 8 minutes**. En dessous de 3 min, la descente est trop courte pour créer de la tension ; au-dessus de 8 min, la boucle décourage le « encore une descente ». Hors fourchette, une **story d'équilibrage** est ouverte (ajustement par édition de `data/` uniquement, sans code). Relever aussi, sur ces 3 boucles, le cumul des pertes (soute pleine `TM-5.9`, destruction `TM-6.8`, progression non sauvegardée `TM-7.7`). **La décision d'ajustement revient à l'utilisateur** | B |
+| TM-7.12 | **« Encore une descente »** (amendement §5, objectif) | Après 20 minutes de jeu ininterrompu, arrêter et consigner par écrit : ai-je envie de refaire une descente, et pourquoi ? Qu'est-ce qui m'a donné envie de continuer, qu'est-ce qui m'a fait décrocher ? | Réponse consignée dans le rapport, avec ses raisons. Cas **qualitatif** : il ne peut pas échouer formellement, il capte le seul objectif que l'amendement se donne au §5. Une réponse négative n'est pas une anomalie mais un signal d'équilibrage, à instruire dans la story `7.6` | m |
 
 ---
 
@@ -170,3 +193,43 @@ Les agents vérifient en amont ce qui est automatisable en headless ; ce plan ne
 | **Q6** — terrain semi-procédural dès le MVP | Génération à graine explicite et forçable, ancrages déterministes | TM-3.14, TM-3.15, TM-3.16, **TM-6.6** (+ prérequis de campagne `P4`) |
 | **Q7** — sauvegarde manuelle uniquement | Aucune sauvegarde automatique, garde-fous non bloquants | TM-7.7, TM-7.8, TM-7.9, TM-7.10 |
 | **Q5 × Q7** — cumul des deux pertes | Mesure chiffrée au sprint 5, décision d'ajustement à l'utilisateur | **TM-5.9** |
+
+## Traçabilité — vérifications transférées entre sprints
+
+> Une vérification qu'une procédure ne sait pas observer est **transférée et tracée**, jamais abandonnée (point d'audit `I5`).
+
+| Vérification | Cas d'origine | Motif | Transférée à | Story |
+|---|---|---|---|---|
+| Valeurs de départ de `GameState` lues à l'écran (carburant, blindage, crédits, soute, profondeur) | `TM-1.6` e-l | Variables **privées non exportées** : l'Inspecteur ne les affiche pas de façon garantie, et aucun artefact de debug ne peut être créé pour y remédier (`A5`) | **`TM-4.1`** (sprint 4, HUD) | `1.12` |
+| Déclenchement d'une action par appui, une seule fois | `TM-1.5` | Aucun code ne consomme les entrées avant la phase 2 | **Sprint 2** — identifiant conservé | `1.3` / **Q9** |
+
+## Traçabilité — amendement « gameplay addictif » et arbitrages du 2026-09-06
+
+| Origine | Exigence | Cas de test |
+|---|---|---|
+| §2.1 – §2.3 · **Q19** | Loot pondéré par couche, tirage reproductible | TM-3.17, TM-3.20 (+ prérequis `P5`) |
+| §2.4 · **règle de design** | Jamais 0 % de drop, même à la surface | **TM-3.18** |
+| §2.4 · **règle de design** | Feedback visuel et sonore fort et durable sur les raretés hautes | **TM-3.19** |
+| **Q12** *(contrainte jusque-là sans cas de test)* | Aucune ressource `actif_mvp: false` dans le loot | **TM-3.21** |
+| §3.2 – §3.3 · **Q18** | Progression infinie, aucun plafond dur, coût géométrique | **TM-5.10** |
+| §3.3 · **règle de design** | Prochain palier atteignable en 1 à 3 descentes | **TM-5.11**, TM-7.11 |
+| §3.3 · **règle de design** | Amélioration ressentie dès la descente suivante | **TM-5.12** |
+| §4.1 – §4.2 · **Q17** | Courbe de risque croissante par profondeur | **TM-6.7** (+ prérequis `P6`) |
+| §4.3 · **règle de design** | **La perte n'est jamais totale** | **TM-6.8** |
+| §4.3 · **règle de design** | Indicateur de danger progressif et non chiffré | **TM-6.9** |
+| §4.1 | Dilemme « remonter vendre / pousser plus loin » | TM-6.10 |
+| §5 · **boucle de session** | Boucle complète de 3 à 8 minutes | **TM-7.11** |
+| §5 · **objectif** | Sentiment « encore une descente » | TM-7.12 |
+
+## Traçabilité — arbitrages Q20 à Q22 du 2026-09-06
+
+| Origine | Exigence | Cas de test |
+|---|---|---|
+| **Q20** — dégâts de chute et d'impact | Dégâts proportionnels à la vitesse, seuil en deçà duquel rien n'est infligé, blindage réellement décrémenté | **TM-2.9** |
+| **Q20** × **Q17** | État de destruction explicite dès le sprint 2 *(règle §4.3 complète vérifiée par `TM-6.8`)* | TM-2.10 |
+| **Q21** — quatre améliorations actives | `blindage` achetable au-delà du palier 1 et **ressenti** (§3.3) | **TM-5.13** |
+| **Q21** — périmètre du catalogue | Exactement 4 améliorations, aucune « profondeur max sûre » | TM-5.14 |
+| **Q21** — non-couverture assumée | « Vitesse de forage » du §3.2 : `foret` reste une **puissance** au MVP | *aucun cas — non couvert, tracé au backlog, à rouvrir post-MVP* |
+| **Q22** — surcharge du sprint 6 acceptée | Aucun effet sur le plan de tests : la phase 6 conserve une seule gate et ses cas `TM-6.1` à `TM-6.10` | *sans objet* |
+
+> **Aucun cas de test antérieur n'a été renuméroté** le 2026-09-06 : les identifiants ajoutés prolongent la numérotation de leur sprint (`TM-3.17` à `TM-3.21`, `TM-5.10` à `TM-5.12`, `TM-6.7` à `TM-6.10`, `TM-7.11` et `TM-7.12` pour la story `1.10` ; `TM-2.9`, `TM-2.10`, `TM-5.13` et `TM-5.14` pour la story `1.11`), conformément à la règle « ne pas renuméroter » de l'en-tête.

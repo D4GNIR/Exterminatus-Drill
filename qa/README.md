@@ -4,6 +4,8 @@ Ce dossier définit **comment un sprint est déclaré terminé** sur *Motherload
 
 Aucune phase n'est commitée tant que sa gate n'est pas franchie.
 
+> **Référence fonctionnelle opposable en audit** : `cahier_des_charges_motherload_40k_godot.md`, **amendé par `cahier_des_charges_gameplay_addictif.md`** (arbitrage **Q16** du 2026-09-06, story `1.10`). L'amendement fait foi pour le loot, l'économie, la courbe de risque et la durée de boucle ; le CDC principal fait foi partout ailleurs. Un écart à l'amendement est un écart au cahier des charges (point d'audit `I5`).
+
 ---
 
 ## 1. Principe
@@ -61,6 +63,17 @@ Stories dev de la phase  ──▶  Audit qualité  ──▶  Tests manuels hum
 Règles d'interprétation, opposables en audit :
 
 - Une sortie contenant `ERROR:` ou `SCRIPT ERROR:` est un **échec**, même avec un code de retour 0. L'auditeur lit la sortie, pas seulement l'exit code.
+
+  > **Exception unique et bornée — faux positif `--check-only` sur les autoloads** *(story `1.9`)*. En mode `--check-only`, Godot compile un script isolément, sans démarrer le projet ; or les noms d'autoload ne deviennent des identifiants globaux qu'au démarrage. Tout script référençant un autoload y produit donc un faux `Identifier not found`, suivi de `Failed to load script … "Compilation failed"`, avec un code de retour 0.
+  >
+  > L'exception ne s'applique que si les **trois** conditions sont réunies :
+  > 1. la commande est `--check-only` ;
+  > 2. le message est exactement `Identifier not found: X` (et l'échec de chargement qui en découle) ;
+  > 3. `X` figure réellement dans la section `[autoload]` de `project.godot`.
+  >
+  > **Dans ce cas seulement**, l'auditeur ne conclut pas à un échec et rejoue la vérification par `godot --headless --import` **et** `godot --headless --editor --quit`, qui chargent le projet complet — c'est cette seconde sortie qui fait foi. Toute autre occurrence de `ERROR:`, y compris un `Identifier not found` portant sur autre chose qu'un autoload déclaré, reste un **échec**.
+  >
+  > Pourquoi conserver `--check-only` malgré ce défaut : c'est le seul mode qui localise une erreur de syntaxe **fichier par fichier**. `--import` et `--editor --quit` signalent qu'un projet a une erreur, pas lequel de ses scripts la porte.
 - Le premier `--import` est **obligatoire** après ajout d'assets : sans lui, un `.tscn` référençant une ressource non importée échouera à tort.
 - L'audit qualité n'est donc plus purement statique : un point de checklist portant sur la syntaxe, le chargement d'une scène ou la validité de `project.godot` **doit** être étayé par une commande headless et sa sortie.
 

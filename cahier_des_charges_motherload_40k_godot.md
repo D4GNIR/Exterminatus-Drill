@@ -2,6 +2,8 @@
 
 > **Note de propriété intellectuelle** : ce document décrit un projet de fan game inspiré de la boucle de jeu de *Motherload* et de l'ambiance grimdark de Warhammer 40,000. Pour une diffusion commerciale, créer un univers, des noms, factions, visuels et textes originaux plutôt que d'utiliser des éléments protégés.
 
+> ⚠️ **Amendement en vigueur depuis le 2026-09-06** : ce cahier des charges est complété et, sur certains points, **modifié** par [`cahier_des_charges_gameplay_addictif.md`](cahier_des_charges_gameplay_addictif.md), qui définit les mécaniques de rétention (loot pondéré, progression infinie, risque croissant, boucle de session). Ses mécaniques **font partie du périmètre MVP**. Voir la section terminale « Amendement — Cahier des charges gameplay addictif » pour la règle de préséance et la liste des sections concernées. *Arbitrage utilisateur **Q16**, story `1.10`.*
+
 ## Vision
 
 - **Titre provisoire** : *Exterminatus Drill*
@@ -246,3 +248,42 @@ Le premier prototype doit inclure uniquement :
 - Quêtes du Mechanicus et choix narratifs.
 - Plusieurs biomes, boss final et fins alternatives.
 - Support manette, remappage complet et options d'accessibilité.
+
+## Amendement — Cahier des charges gameplay addictif
+
+> Section ajoutée le **2026-09-06** par la story `1.10`, sur arbitrage utilisateur **Q16**. Elle **ne modifie aucune section existante** de ce document : elle en déclare le complément.
+
+Le document [`cahier_des_charges_gameplay_addictif.md`](cahier_des_charges_gameplay_addictif.md) est un **amendement thématique** à ce cahier des charges. Il n'y a pas deux cahiers des charges concurrents : celui-ci reste le document de référence du projet, l'amendement le complète sur les mécaniques de rétention.
+
+### Règle de préséance
+
+| Domaine | Document qui fait foi |
+|---|---|
+| Loot et récompense variable, économie et coûts d'amélioration, courbe de risque par profondeur, feedback des drops rares, durée de la boucle de session | **Amendement** |
+| Univers, pitch, scénario et fins, contrôles et Input Map, règles de forage autorisées et interdites, direction artistique, architecture Godot, données de tuile | **Ce document** |
+
+### Périmètre apporté par l'amendement, et son entrée au MVP
+
+| § de l'amendement | Apport | Phase de réalisation |
+|---|---|---|
+| §2 — Boucle de récompense variable | Table de loot pondérée par couche de profondeur, tirage par poids, jamais 0 % de drop, feedback fort sur les raretés hautes | 3 |
+| §3 — Progression infinie | Coût exponentiel `base × facteur^niveau`, **sans plafond dur**, **4 stats upgradables minimum**, effet ressenti dès la descente suivante | 5 |
+| §4 — Risque croissant | Probabilité de rencontre hostile croissante avec la profondeur (2 % → 8 % → 18 % → 35 %), indicateur de danger non chiffré, **perte jamais totale** | 2 (socle `ArmorSystem`), 6 |
+| §5 — Boucle de session | Une boucle complète descente → collecte → remontée → vente → amélioration doit durer **3 à 8 minutes** | 7 |
+| §6 — Hors scope MVP | Streak / connexion quotidienne, leaderboard, multijoueur, near-miss compétitif — **exclus**, comme le sont les éléments du « Backlog après MVP » ci-dessus | — |
+
+### Sections de ce document que l'amendement complète ou modifie
+
+- **« Boucle de jeu »** — les étapes 2 et 6 se lisent désormais avec la boucle §5 de l'amendement et sa contrainte de durée.
+- **« Ressources »** — la rareté des six ressources est croisée avec la table de loot pondérée du §2.2.
+- **« Dangers »** — les menaces du §4.2 (créatures xenos, Nécrons, corruption warp, essaims Tyranides) entrent au MVP. Les dangers listés dans le tableau « Dangers » de ce document (roche dure, éboulement, gaz toxique, poche de prométhium, anomalie Warp) restent **post-MVP** : les deux listes ne se confondent pas.
+- **« Améliorations »** — les paliers deviennent une **courbe de coût sans plafond**.
+- **« Économie »** — les crédits impériaux sont la ressource pivot du §3.1.
+- **« Direction sonore »** — s'y ajoutent le son distinct de drop rare (§2.4) et l'ambiance sonore de danger croissant (§4.3).
+- **« MVP jouable »** — le point 4 (soute et carburant) est complété par le blindage réellement décrémenté ; le point 6 passe de **trois** à **au moins quatre** améliorations (§3.2 de l'amendement, qui prime) ; le point 7 accueille les menaces en plus de l'anomalie.
+- **« Critères d'acceptation MVP »** — quatre critères s'ajoutent, issus des règles de design de l'amendement : jamais 0 % de drop (§2.4), aucun plafond de progression et coût atteignable en 1 à 3 descentes (§3.3), perte jamais totale en cas d'échec (§4.3), boucle de session comprise entre 3 et 8 minutes (§5).
+- **« Backlog après MVP »** — inchangé, complété par le §6 de l'amendement.
+
+### Conséquence sur les arbitrages antérieurs
+
+L'entrée du système de dégâts au MVP (**Q17**) **annule** deux arbitrages rendus le 2026-08-29 : **Q3** (blindage affiché mais statique) et **Q8** (mort de la foreuse déclarée sans objet). Le détail et la traçabilité de cette annulation vivent dans `stories/BACKLOG.md` et `stories/AVANCEMENT.md`.
