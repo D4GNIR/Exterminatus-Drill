@@ -7,10 +7,13 @@ Référence fonctionnelle : `cahier_des_charges_motherload_40k_godot.md`, **amen
 
 ## Conventions de lecture
 
-- **1 phase = 1 sprint = 1 commit.** Chaque phase se termine par ses deux stories de gate : **audit qualité** puis **tests manuels humains**.
-- Statuts : `À faire` · `En cours` · `Terminée` · `Bloquée`. **Une seule story `En cours` à la fois.**
+- **1 phase = 1 sprint = 1 commit.** Chaque phase se termine par **une seule story de gate : l'audit qualité**. *(Depuis la décision du 2026-09-26, story `2.8` — voir l'encadré ci-dessous.)*
+- Statuts : `À faire` · `En cours` · `Terminée` · `Bloquée` · `Reportée` · `Annulée`. **Une seule story `En cours` à la fois.**
+- **Règle de dénombrement** *(formalisée le 2026-09-27, story `2.12`)* : une story **`Annulée`** est **exclue** du total MVP — elle ne sera jamais faite ; une story **`Reportée`** y est **incluse** — elle sera faite, plus tard et ailleurs. `ls stories/*.md` donne donc un nombre **supérieur** au total affiché, l'écart valant exactement le nombre de stories `Annulée` (une seule à ce jour : `0.5`). Le total est **recalculé, jamais recopié** : point d'audit **`I7 [B]`**.
 - Les fichiers de stories ne sont créés qu'**à l'ouverture de la phase**. Pour les phases ≥ 2, les numéros affichés sont **prévisionnels** et ne deviennent fermes qu'à la création des fichiers (une story créée ne peut plus être renumérotée).
-- **[H]** = critère exigeant un **jugement humain à l'écran** (rendu, ressenti de contrôle, équilibrage, audio, ergonomie). Godot 4.7.2 étant installé, tout ce qui relève de la syntaxe et du chargement est vérifié par les agents en headless — cf. `qa/README.md` §4.
+- **[H]** = critère exigeant un **jugement humain à l'écran** (rendu, ressenti de contrôle, équilibrage, audio, ergonomie). Godot 4.7.2 étant installé, tout ce qui relève de la syntaxe et du chargement est vérifié par les agents en headless — cf. `qa/README.md` §4. **Un `[H]` reste « en attente » jusqu'à la recette `7.8`** : il n'est jamais coché par un agent, jamais réputé satisfait.
+
+> ⛔ **Régime de vérification changé le 2026-09-26 — décision utilisateur, story `2.8`.** Plus de campagne de tests manuels humains par sprint : **la vérification humaine est regroupée en fin de projet**, dans la recette unique `7.8`. Conséquences : la gate de sprint se réduit à l'**audit qualité** (verdict **Autorisé** ⇒ commit de phase autorisé) ; les gates `2.7`, `3.9`, `4.6`, `5.9` et `6.10` passent **Reportée** vers `7.8`, fichiers conservés et numéros inchangés ; le plan `qa/plan-tests-manuels.md` est intégralement conservé et devient le plan de la recette finale. Coût assumé et registre du risque : story `2.8` et `stories/AVANCEMENT.md` §5.
 
 ---
 
@@ -19,20 +22,30 @@ Référence fonctionnelle : `cahier_des_charges_motherload_40k_godot.md`, **amen
 | Sprint | Phase | Objectif en une ligne | Stories | Statut |
 |---|---|---|---|---|
 | 0 | **0 — Amorçage du projet** | Aligner la méthodologie, produire le plan de travail, outiller la machine et poser le dépôt | 10 | ✅ Close |
-| 1 | **1 — Fondations techniques Godot** | Un projet Godot 4 qui démarre : arborescence, Input Map, `GameState`, données, scènes squelettes | 12 | ✅ Close ⚠️ |
-| 2 | **2 — Foreuse et déplacement** | Piloter la foreuse dans un tunnel : physique, carburant, caméra, **socle de dégâts** | ~7 | 🟡 **Phase courante** |
+| 1 | **1 — Fondations techniques Godot** | Un projet Godot 4 qui démarre : arborescence, Input Map, `GameState`, données, scènes squelettes | 12 | ✅ Close ⚠️ · commit `9eb6479` |
+| 2 | **2 — Foreuse et déplacement** | Piloter la foreuse dans un tunnel : physique, carburant, caméra, **socle de dégâts** | 12 | 🟢 **Prête au commit** — 10 Terminée, `2.7` Reportée, gate **Autorisé** |
 | 3 | **3 — Terrain destructible et forage** | Creuser et collecter sur un terrain **généré**, avec **loot pondéré par couche**, en respectant les règles de forage interdites | ~9 | ⬜ À faire |
 | 4 | **4 — HUD et interfaces de bord** | Voir son état en temps réel et mettre le jeu en pause | ~6 | ⬜ À faire |
 | 5 | **5 — Surface, économie et améliorations** | Fermer la boucle : vendre, ravitailler, améliorer — **progression infinie sans plafond** | ~9 | ⬜ À faire |
 | 6 | **6 — Zone profonde, menaces et anomalie scénarisée** | Descendre, affronter un **risque croissant** et déclencher l'anomalie | ~10 ⚠️ | ⬜ À faire |
-| 7 | **7 — Sauvegarde locale et recette MVP** | Persister la partie, **valider la boucle 3-8 min** et les critères d'acceptation MVP | ~8 | ⬜ À faire |
+| 7 | **7 — Sauvegarde locale et recette MVP** | Persister la partie, **valider la boucle 3-8 min**, les critères d'acceptation MVP et **toute la recette humaine du projet** (`7.8`) | ~8 | ⬜ À faire |
 | 8+ | **Post-MVP** | Extensions du « Backlog après MVP » du CDC et du §6 de l'amendement | non détaillé | ⬜ À faire |
 
 **MVP jouable atteint à la fin de la phase 7.**
 
 > **Volumes révisés le 2026-09-06** (story `1.10`, intégration de l'amendement « gameplay addictif », arbitrage **Q19** : extension des phases existantes, aucune phase nouvelle). Total MVP : **59 → 68 stories**. Détail des ajouts : phase 1 `+1` (la story d'intégration elle-même), phase 2 `+1`, phase 3 `+1`, phase 5 `+2`, phase 6 `+3`, phase 7 `+1`.
 >
-> **Révision du 2026-09-06 (suite, story `1.11`)** : total porté à **69** par la seule story `1.11` (arbitrages Q20-Q22). Les arbitrages `Q20`, `Q21` et `Q22` **ne changent aucun volume de phase** : ils précisent l'objet de stories déjà prévues (`2.5`, `5.7`) et confirment la charge de la phase 6. Addition recalculée : 9 + 11 + 7 + 9 + 6 + 9 + 10 + 8 = **69**.
+> **Révision du 2026-09-06 (suite, story `1.11`)** : total porté à **69** par la seule story `1.11` (arbitrages Q20-Q22). Les arbitrages `Q20`, `Q21` et `Q22` **ne changent aucun volume de phase** : ils précisent l'objet de stories déjà prévues (`2.5`, `5.7`) et confirment la charge de la phase 6. Addition recalculée : 9 + 11 + 7 + 9 + 6 + 9 + 10 + 8 = **69**. ⚠️ *Le terme « 11 » de cette addition est **erroné** : la phase 1 compte **12** fichiers de story (`1.1` à `1.12`). Correction portée par la story `2.9` — voir la révision du 2026-09-26 ci-dessous.*
+>
+> **Révision du 2026-09-27 (story `2.12`)** : total **74 → 75** (phase 2 : 11 → **12**), par la story de corrections issue de la revue `po`. Addition vérifiée : 9+12+12+9+6+9+10+8 = **75**. *Rappel de la règle de dénombrement ci-dessus : `0.5` `Annulée` est exclue, les gates `Reportée` sont incluses. Contrôle : **34** fichiers de story existent (phases 0 à 2), dont **33** comptés — l'écart de **1** est exactement la story `Annulée`. Les 42 stories des phases 3 à 7 restent **prévisionnelles**, sans fichier : 33 + 42 = **75**.*
+>
+> **Révision du 2026-09-27 (story `2.11`)** : total **73 → 74** (phase 2 : 10 → **11**), par la story d'arbitrages `Q23`-`Q25` demandée avant le commit. Addition vérifiée : 9+12+11+9+6+9+10+8 = **74**.
+>
+> **Révision du 2026-09-26 (story `2.10`)** : total **72 → 73** (phase 2 : 9 → **10**), par la story de correction issue de l'audit `2.6`. Addition vérifiée : 9+12+10+9+6+9+10+8 = **73**.
+>
+> **Révision du 2026-09-26 (story `2.9`)** : **correction d'un dénombrement, pas d'un périmètre.** La phase 1 était comptée **11** ici et **12** dans `stories/AVANCEMENT.md`, d'où deux totaux MVP divergents (70 et 71). Arbitrage par le fait : `ls stories/1.*.md` compte **12** fichiers (`1.1` à `1.12`). Le total retenu est donc **72** après `2.9` — addition vérifiée : 9 + 12 + 9 + 9 + 6 + 9 + 10 + 8 = **72** (phase 2 portée à **9** par `2.8` puis `2.9`). Les deux documents affichent désormais la même valeur.
+>
+> **Révision du 2026-09-26 (story `2.8`)** : total porté à **70** par la seule story `2.8` (phase 2 : 7 → **8**). Les cinq gates **Reportée** (`2.7`, `3.9`, `4.6`, `5.9`, `6.10`) **restent comptées** dans les effectifs de leur phase : elles ne sont ni supprimées ni renumérotées, seul le moment de leur exécution change — elles se jouent à `7.8`.
 >
 > ⚠️ **Phase 6 en surcharge — ACCEPTÉE par l'utilisateur le 2026-09-06 (`Q22`)** : 7 → **10 stories** (8 de développement + 2 de gate), et changement d'objet — elle porte désormais le système de dégâts et de menaces en plus de la narration. C'est la conséquence directe de la tension entre **Q17** (dégâts et menaces au MVP) et **Q19** (interdiction d'ouvrir une phase dédiée). **Décision `Q22` : un seul sprint, une seule gate**, ni scission ni redistribution vers la phase 4. Le risque n'est pas levé, il est **assumé** ; les deux options écartées restent réactivables si la phase dérape — réexamen possible à la clôture de la phase 5.
 
@@ -61,7 +74,7 @@ Objectif : disposer d'un cadre de travail fiable (méthodologie, plan, dépôt, 
 
 > Gate adaptée : le sprint 0 ne produit pas de code. L'audit porte sur la cohérence documentaire et le dépôt.
 
-> ⛔ **Gate 2/2 annulée pour ce sprint uniquement** (story `0.10`, décision utilisateur du 2026-08-29). La phase 0 est close avec la seule gate d'audit `0.4`. Les cas `TM-0.1` à `TM-0.3` ne seront pas exécutés — dont `TM-0.2` (bloquant), qui vérifiait humainement que les 8 points « MVP jouable » et les 7 critères d'acceptation du CDC sont tous couverts. **Les gates de tests manuels des sprints 1 à 7 restent en vigueur** : elles portent sur du code et sur les critères `[H]`, qu'aucun agent ne peut valider.
+> ⛔ **Gate 2/2 annulée pour ce sprint uniquement** (story `0.10`, décision utilisateur du 2026-08-29). La phase 0 est close avec la seule gate d'audit `0.4`. Les cas `TM-0.1` à `TM-0.3` ne seront pas exécutés — dont `TM-0.2` (bloquant), qui vérifiait humainement que les 8 points « MVP jouable » et les 7 critères d'acceptation du CDC sont tous couverts. ~~**Les gates de tests manuels des sprints 1 à 7 restent en vigueur**~~ — *énoncé dépassé le 2026-09-26 (story `2.8`)* : elles sont désormais **toutes regroupées dans la recette unique `7.8`**. La portée limitée de `0.10` au seul sprint 0 est donc devenue sans objet, non par extension de `0.10`, mais par une décision distincte et postérieure.
 
 ---
 
@@ -98,24 +111,33 @@ Objectif : un projet Godot 4 qui s'importe, se lance, expose ses contrôles et s
 
 ---
 
-## Phase 2 — Foreuse et déplacement · Sprint 2 *(prévisionnel)*
+## Phase 2 — Foreuse et déplacement · Sprint 2 · 🟡 **PHASE COURANTE**
 
 Objectif : une foreuse pilotable dans un tunnel, soumise à la gravité, au carburant et suivie par la caméra — et dotée du **socle de dégâts** exigé par l'amendement (§4).
 
-| # (prév.) | Story | Statut |
-|---|---|---|
-| 2.1 | Scène `DrillRig.tscn` (arbre contractuel : Sprite, Collision, Drill/Fuel/Armor/Scanner, Audio) — **élargie par Q17** : `ArmorSystem` cesse d'être un nœud vide, il porte un script | ⬜ À faire |
-| 2.2 | Déplacement et physique (gravité, inertie, `brake`, annulation des directions opposées) | ⬜ À faire |
-| 2.3 | Composant `FuelSystem` (consommation, panne sèche : ni forage ni propulsion) | ⬜ À faire |
-| 2.4 | Caméra de suivi et limites de monde | ⬜ À faire |
-| 2.5 | **`ArmorSystem` et dégâts de chute/impact** *(Q17 — annule Q3 et Q8 · Q20)* : dégâts **proportionnels à la vitesse d'impact**, seuil et coefficient **en données** ; décrément réel du blindage ; état de destruction. **Source de dégâts et consommateur livrés dans le même sprint** | ⬜ À faire |
-| 2.6 | 🔒 Audit qualité — Sprint 2 | ⬜ À faire |
-| 2.7 | 🔒 Tests manuels humains — Sprint 2 | ⬜ À faire |
+> ✅ **Phase ouverte le 2026-09-06, numérotation FERME — 11 fichiers au 2026-09-27.** 7 à l'ouverture, puis **4 stories non prévues** créées en cours de sprint : `2.8` (régime de gate), `2.9` (checklist opposable), `2.10` (correction des KO de l'audit) et `2.11` (arbitrages `Q23`-`Q25`). Une story créée ne se renumérote plus (`.claude/CLAUDE.md`, *Interdits*) : le tableau ci-dessous est donc trié **par numéro**, non par ordre d'exécution. **Ordre d'exécution réel** : `2.1` → `2.2` → `2.3` → `2.4` → `2.8` → `2.5` → `2.9` → `2.6` → `2.10` → `2.11`.
+
+| # | Story | Statut | Dépend de |
+|---|---|---|---|
+| 2.1 | Scène `DrillRig.tscn` et arbre contractuel (Sprite, Collision, Drill/Fuel/Armor/Scanner, Audio) + instanciation dans `Main.tscn` | ✅ Terminée | 1.2, 1.6 |
+| 2.2 | Déplacement et physique (gravité, inertie, `brake`, directions opposées) · **`data/drill.json`** (Q15) · **discipline `_unhandled_input`** (Q10) · `TM-1.5` : volet déplacement jouable, volet `echo` **transféré au sprint 3** (Q9) | ✅ Terminée | 2.1, 1.3, 1.5 |
+| 2.3 | Composant `FuelSystem` (consommation, panne sèche : ni forage ni propulsion) · alerte « carburant bas » **sonore** | ✅ Terminée — volet « ni forage » **N/A** jusqu'à `3.4` | 2.1, 2.2 |
+| 2.4 | Caméra de suivi et limites de monde · bords de carte **hébergés** dans `data/drill.json`, à migrer en `3.2` | ✅ Terminée | 2.1, 2.2 |
+| 2.5 | **`ArmorSystem` et dégâts de chute/impact** *(Q17 — annule Q3 et Q8 · Q20)* : dégâts **proportionnels à la vitesse**, seuil et coefficient **en données**, seuil non nul ; décrément réel du blindage ; état de destruction. **Source et consommateur livrés dans le même sprint** (`M9`) | ✅ Terminée — saturation du coût de chute **rééquilibrée par `Q23`** (story `2.11`) : plage portée de 8,5 à **25 tuiles**, en données seules · **confinement aux bords de carte** désormais détenu par `2.11` (`Q24`), relevé par les bordures indestructibles de `3.2` | 2.1, 2.2 |
+| 2.6 | 🔒 **Gate unique** — Audit qualité — Sprint 2 | ✅ Terminée — **Autorisé** (90 points · 50 OK · 2 KO mineurs · 38 N/A) · **itération 2 : les 2 KO levés** | 2.1 → 2.5 |
+| 2.7 | ~~🔒 **Gate 2/2** — Tests manuels humains — Sprint 2~~ · charge transférée à `7.8` | ⏭ **Reportée** vers `7.8` (story `2.8`) | — |
+| 2.8 | Suspension des tests manuels humains jusqu'à la fin du projet *(décision du 2026-09-26)* | ✅ Terminée | 2.1 |
+| 2.9 | Corrections des contrôles opposables de l'audit *(doublon `F5`, contrôle `F1`, exception `1.9` élargie, compteurs, écart `E14`)* — **documentaire** | ✅ Terminée | 2.2, 2.3, 2.4 · **avant `2.6`** |
+| 2.10 | Correction des deux KO mineurs de l'audit `2.6` (`B6` fonction morte · `D2` rejet silencieux) | ✅ Terminée — audit `2.6` **itération 2 : 2 OK, 0 KO** | 2.6 |
+| 2.12 | **Corrections issues de la revue `po`** : `E15` (palier « 300 m+ » rendu atteignable) · point d'audit **`I7 [B]`** sur la cohérence des compteurs · règle de dénombrement écrite · renvois `2.2` · point d'apparition tracé et reporté à `3.3` | ✅ Terminée | revue `po` · 2.11 |
+| 2.11 | **Arbitrages `Q23` à `Q25` de fin de sprint** : équilibrage du coût de chute (données seules) · propriété du **confinement aux bords de carte** · liste de scripts du CDC déclarée **indicative**, `E14` clos | ✅ Terminée | 2.4, 2.5, 2.9, 2.10 |
 
 Couvre : « MVP jouable » 1 et 4 (partiel) · « Règles autorisées » · « Règles interdites » (directions opposées, panne sèche) · **amendement §4.1 et §4.3** (socle du système de dégâts).
 
 > ✅ **`Q20` tranchée le 2026-09-06 : dégâts de chute et d'impact, dès la phase 2.** La story `2.5` livre **la source de dégâts et son consommateur dans le même sprint** : l'`ArmorSystem` n'est donc **jamais un composant sans appelant**, et le point d'audit `B6` (code mort) sortira `OK` à l'audit `2.6` sans exception à plaider. Un cas de test de la phase 2 doit constater un **blindage réellement décrémenté à l'écran** (`TM-2.9`), pas seulement une fonction appelable.
 >
+> ⏭ **`2.7` est reportée — sa charge part en totalité vers `7.8`** (story `2.8`, 2026-09-26). Elle devait exécuter 18 cas : les 7 du sprint 1 jamais joués (`TM-1.1`–`TM-1.4`, `TM-1.6`–`TM-1.8`), `TM-1.5` (reporté par **Q9**) et les 11 du sprint 2 (`TM-2.1`–`TM-2.11`), plus la confirmation des **9 critères `[H]`** des stories `1.1`–`1.6`. Rien n'est supprimé : tout est différé à la recette finale. **La gate de la phase 2 est donc l'audit `2.6` seul** — verdict **Autorisé** ⇒ commit de phase autorisé. Risque aggravé, inscrit à `stories/AVANCEMENT.md` §5.
+
 > ⚠️ **Ajout de périmètre assumé** : les dégâts de chute ne figurent **ni dans le CDC principal, ni dans l'amendement**. C'est une décision de l'utilisateur, cohérente avec le genre. Ne pas la confondre avec l'« **Éboulement** » de la section « Dangers » du CDC principal, qui reste **post-MVP** : l'éboulement est un événement de terrain, l'impact est une conséquence directe de la physique de `2.2`. Les menaces de la courbe §4.2 (phase 6) s'**ajoutent** aux dégâts d'impact, elles ne les remplacent pas.
 
 ---
@@ -127,18 +149,18 @@ Objectif : le cœur du jeu — creuser terre, roche et 2 minerais, avec les inte
 | # (prév.) | Story | Statut |
 |---|---|---|
 | 3.1 | TileSet et Custom Data Layers (`mineable`, `hardness`, `resource_id`, `value`, `hazard_type`, `destructible`) | ⬜ À faire |
-| 3.2 | **Générateur de terrain semi-procédural** (Q6) : strates terre/roche par profondeur, densité des 2 minerais, bordures indestructibles, **graine explicite et forçable** · `data/generation.json` (Q15) | ⬜ À faire |
-| 3.3 | Ancrages déterministes indépendants de la graine : zone de surface, emplacement de l'anomalie | ⬜ À faire |
+| 3.2 | **Générateur de terrain semi-procédural** (Q6) : strates terre/roche par profondeur, densité des 2 minerais, bordures indestructibles, **graine explicite et forçable** · `data/generation.json` (Q15) · ⚠️ **reprend le bloc `monde` de `data/drill.json`** (bords de carte hébergés par la story `2.4`) : les déplacer ici, `GameData.get_world_bounds()` restant la façade, et `pixels_par_metre` à réconcilier avec la taille de tuile de `3.1` · ⚠️ **écart `E15`** — le fond de carte provisoire est à **300,0 m** (profondeur atteignable mesurée : 299,5 m), ce qui rend **hors d'atteinte** le palier « 300 m+ » de la courbe de risque §4.2 : dimensionner la carte pour que ce palier soit jouable, et n'avoir **qu'une** source de vérité pour le générateur et le confinement (`Q24`) | ⬜ À faire |
+| 3.3 | Ancrages déterministes indépendants de la graine : zone de surface, emplacement de l'anomalie · ⚠️ **inclut le point d'apparition de la foreuse, posé au sol** — relevé par la revue `po` du 2026-09-27 : en phase 2, faute de terrain, la foreuse **chute du haut au fond de la carte en ~9,7 s au lancement et perd 54,6 points de blindage avant toute action du joueur**. C'est le premier écran que verrait un testeur. Différé ici **sur décision utilisateur** : les bords de la phase 2 sont provisoires | ⬜ À faire |
 | 3.4 | `MiningSystem` : forage bas et latéral, **aucun forage vers le haut**, **aucun forage latéral dans le vide** | ⬜ À faire |
 | 3.5 | Collecte des minerais et soute limitée — **soute pleine : tuile détruite, minerai perdu** (Q5), avec alerte préalable et perte visible | ⬜ À faire |
 | 3.6 | **Table de loot pondérée par couche et tirage reproductible** *(amendement §2.1 à §2.3)* : poids par couche dans `data/generation.json`, tirage par le RNG ensemencé de `3.2`, **jamais 0 % de drop** (§2.4), aucune ressource `actif_mvp=false` tirée (Q12) | ⬜ À faire |
 | 3.7 | Retour de forage (progression, particules, audio) — **élargi** : feedback fort et durable sur les raretés hautes, lumière et son distincts (§2.4) | ⬜ À faire |
 | 3.8 | 🔒 Audit qualité — Sprint 3 | ⬜ À faire |
-| 3.9 | 🔒 Tests manuels humains — Sprint 3 | ⬜ À faire |
+| 3.9 | ~~🔒 Tests manuels humains — Sprint 3~~ | ⏭ **Reportée** vers `7.8` (story `2.8`) |
 
 Couvre : « MVP jouable » 2, 3, 4 · « Données de tuile » · « Règles interdites ou limitées » · arbitrages **Q5**, **Q6** et **Q19** · **amendement §2** (boucle de récompense variable) et **§7.1** (priorité de développement n° 1).
 
-> ⚠️ **Périmètre élargi par Q6** : la génération procédurale, placée en post-MVP par le CDC, remonte dans ce sprint. Volume révisé à 8 stories. Une **graine fixe** est imposée pendant toute la campagne de tests manuels du sprint, sans quoi aucun résultat n'est reproductible — cf. prérequis `P4` de `qa/plan-tests-manuels.md`.
+> ⚠️ **Périmètre élargi par Q6** : la génération procédurale, placée en post-MVP par le CDC, remonte dans ce sprint. Volume révisé à 8 stories. Une **graine fixe** est imposée pendant toute la campagne de tests manuels — désormais la campagne unique `7.8` —, sans quoi aucun résultat n'est reproductible : cf. prérequis `P4` de `qa/plan-tests-manuels.md`.
 
 > **Renumérotation du 2026-08-29** : les entrées provisoires `3.2b` et `7.3b`, non conformes à la nomenclature `<phase>.<sous-tâche>` de `.claude/CLAUDE.md`, ont été résorbées en séquence continue (phase 3 : 8 stories, `3.7`/`3.8` en gate · phase 7 : 7 stories, `7.6`/`7.7` en gate). Opération licite : aucun fichier de story de ces phases n'existe encore, la numérotation restait prévisionnelle.
 
@@ -159,7 +181,7 @@ Objectif : rendre l'état du jeu lisible en temps réel et permettre la pause �
 | 4.3 | Menu pause (`pause`) et cohérence des `process_mode` | ⬜ À faire |
 | 4.4 | Inventaire / soute (`toggle_inventory`, jeu en pause, inputs étanches) | ⬜ À faire |
 | 4.5 | 🔒 Audit qualité — Sprint 4 | ⬜ À faire |
-| 4.6 | 🔒 Tests manuels humains — Sprint 4 | ⬜ À faire |
+| 4.6 | ~~🔒 Tests manuels humains — Sprint 4~~ | ⏭ **Reportée** vers `7.8` (story `2.8`) |
 
 Couvre : critère MVP « L'interface affiche en temps réel carburant, blindage, crédits, charge de soute et profondeur » · « Direction artistique » (UI terminal industriel) · « Direction sonore » (alertes).
 
@@ -179,7 +201,7 @@ Objectif : fermer la boucle de jeu — remonter, vendre, ravitailler, améliorer
 | 5.6 | **Formule de coût exponentielle et progression sans plafond** *(Q18)* : `data/upgrades.json` en `schema_version: 2`, `cout = base × facteur^niveau`, `id` inchangés (Q12), aucun `niveau_max` | ⬜ À faire |
 | 5.7 | **Quatrième amélioration active : activation de `blindage` et paliers supérieurs** *(Q21)* — `actif_mvp: false → true` ; le catalogue ne lui déclare aujourd'hui que le palier 1, de coût nul. **Aucun `id` nouveau** (Q12 intacte) | ⬜ À faire |
 | 5.8 | 🔒 Audit qualité — Sprint 5 | ⬜ À faire |
-| 5.9 | 🔒 Tests manuels humains — Sprint 5 | ⬜ À faire |
+| 5.9 | ~~🔒 Tests manuels humains — Sprint 5~~ | ⏭ **Reportée** vers `7.8` (story `2.8`) |
 
 Couvre : « MVP jouable » 5 et 6 · « Boucle de jeu » · « Économie » · « Améliorations » · critères MVP « boucle non bloquante » et « amélioration immédiate » · **amendement §3** (progression infinie) et **§7.2** (priorité de développement n° 2).
 
@@ -204,7 +226,7 @@ Objectif **élargi par Q17/Q19** : donner un but narratif au forage — une stra
 | 6.7 | **Dégâts, perte partielle du cargo et état de destruction** *(§4.3, Q17)* : la menace consomme l'`ArmorSystem` de `2.5` ; à blindage nul, **une fraction du cargo est perdue — jamais la sauvegarde, ni les crédits, ni les améliorations, ni les flags** | ⬜ À faire |
 | 6.8 | **Indicateur de danger progressif non chiffré** *(§4.3)* : teinte d'écran et ambiance sonore évoluant par palier, **aucune probabilité affichée** au joueur | ⬜ À faire |
 | 6.9 | 🔒 Audit qualité — Sprint 6 | ⬜ À faire |
-| 6.10 | 🔒 Tests manuels humains — Sprint 6 | ⬜ À faire |
+| 6.10 | ~~🔒 Tests manuels humains — Sprint 6~~ | ⏭ **Reportée** vers `7.8` (story `2.8`) |
 
 Couvre : « MVP jouable » 7 · « Scénario » (prologue, progression narrative) · « Contrôles » (`toggle_journal`) · « Direction sonore » (ambiance de danger) · **amendement §4** (risque croissant) et **§7.3 / §7.4** (priorités de développement n° 3 et 4).
 
@@ -231,10 +253,12 @@ Objectif : rendre la partie persistante, **valider que la boucle de session tien
 | 7.5 | Recette MVP et premier passage d'équilibrage | ⬜ À faire |
 | 7.6 | **Playtest de la boucle 3-8 min et équilibrage des poids et des coûts** *(§5, §7.5)* : mesure chronométrée de 3 boucles complètes, vérification que le prochain palier d'amélioration reste atteignable en **1 à 3 descentes** (§3.3), ajustements par édition de `data/` uniquement | ⬜ À faire |
 | 7.7 | 🔒 Audit qualité — Sprint 7 | ⬜ À faire |
-| 7.8 | 🔒 Tests manuels humains — Sprint 7 (recette MVP complète) | ⬜ À faire |
+| 7.8 | 🔒 **Recette humaine unique du projet** — campagne complète `TM-1.x` → `TM-7.x` (absorbe `2.7`, `3.9`, `4.6`, `5.9`, `6.10`) · ~60 cas, plusieurs séances | ⬜ À faire |
 
 Couvre : « MVP jouable » 8 · critère MVP « La sauvegarde restitue position, ressources, crédits, améliorations et flags narratifs » · l'ensemble des « Critères d'acceptation MVP » · **amendement §5** (boucle de session) et **§7.5** (priorité de développement n° 5).
 
+> ⛔ **`7.8` est désormais la recette humaine unique de tout le projet** (story `2.8`, 2026-09-26) : elle exécute le plan `qa/plan-tests-manuels.md` **en entier**, des cas du sprint 1 à ceux du sprint 7, et c'est la **première fois** que le jeu est jugé à l'écran. Prévoir plusieurs séances, et anticiper qu'elle puisse ouvrir des stories de correction touchant **n'importe quelle phase antérieure** — créées dans la phase 7, sans renumérotation des phases closes.
+>
 > **`7.6` est la story de bouclage de l'amendement** : c'est là que se vérifient les trois grandeurs qui ne se mesurent qu'en jouant — durée de boucle (§5), atteignabilité des coûts (§3.3) et distribution réelle du loot (§2.2). Aucun de ces réglages ne doit exiger une modification de code : ils vivent tous dans `data/generation.json` et `data/upgrades.json` (points d'audit `D1`, `K5`, `K7`, `L1`).
 
 ---
@@ -463,6 +487,10 @@ Trois arbitrages rendus après la story `1.10`. Ils **font foi** et ne sont pas 
 | Q20 | Quelle est la **première source de dégâts** du jeu, et à quelle phase arrive-t-elle ? | **Chute et impact, dès la phase 2.** Dégâts **proportionnels à la vitesse d'impact**, avec un **seuil** en deçà duquel aucun dégât n'est infligé et un **coefficient** de conversion — l'un et l'autre **en données**, jamais en dur. Motif : c'est la seule source disponible dès la phase 2, où elle ne dépend que de la physique et des collisions livrées par `2.2`. L'`ArmorSystem` de `2.5` reçoit donc son appelant dans le sprint même où il est écrit, et **n'est jamais du code mort** au sens de `B6`. Corruption warp par profondeur et créatures xenos restent la matière de la **phase 6** (courbe §4.2), en sources **supplémentaires**, non en remplacement. | Stories `2.2`, `2.5` (à créer) · `TM-2.9`, `TM-2.10` |
 | Q21 | **Quatre ou cinq** améliorations actives au MVP ? | **Quatre** : `soute`, `reacteur`, `foret`, `blindage`. Le minimum de 4 stats du §3.2 est atteint **sans créer aucun `id` nouveau** — `blindage` passe simplement `actif_mvp: true` et reçoit des paliers supérieurs (il n'a aujourd'hui que le palier 1, de coût nul). Les 4 `id` restent **définitifs** (**Q12** intacte). « Profondeur max sûre » est **reportée post-MVP** : son effet recouvre la courbe de risque de la phase 6 et c'est la moins tangible des quatre au regard du §3.3. La distinction **puissance / vitesse** de foret est **écartée au MVP** : `foret` reste la puissance (seuil de `hardness`), conformément au point 6 du « MVP jouable » et à `data/upgrades.json` — **à rouvrir en post-MVP**. | Stories `5.4`, `5.6`, `5.7` (à créer) · `TM-5.13`, `TM-5.14` · table de traçabilité de l'amendement |
 | Q22 | La **surcharge du sprint 6** (10 stories) est-elle acceptée, ou faut-il redistribuer ? | **Acceptée telle quelle.** 10 stories, **un seul sprint, une seule gate**. Ni scission en deux sprints, ni déplacement de `6.8` vers la phase 4 : la phase 4 reste à 6 stories, la phase 6 à 10. Le risque 🔴 du registre **n'est pas levé** — il est **assumé par décision utilisateur**. Les deux options écartées sont **conservées et réactivables** si la phase dérape ; réexamen possible à la clôture de la phase 5. | Tableau de la phase 6 de ce fichier · `stories/AVANCEMENT.md` §5 (risque **accepté**, non atténué) |
+| Q23 | Le **coût de chute saturait** au-delà de 8,5 tuiles : au-delà, toute chute coûtait identiquement 33,6 points. Faut-il ajuster, et comment ? | **Relever la vitesse de chute maximale ET adoucir le coût.** `vitesse_chute_max_px_s` 700 → **1200**, `degats_par_px_s` 0,12 → **0,07**. Le **seuil reste à 420** : c'est lui qui rend le déplacement ordinaire gratuit (`M8`). La sévérité croît désormais de **3 à 25 tuiles** (au lieu de 3 à 8,5), pour un maximum de **54,6 points** sur 100. **Aucune ligne de code modifiée** : ajustement entièrement en données. | `data/drill.json` · story `2.11` · rejugé au playtest `7.6` |
+| Q24 | Le **confinement de la foreuse aux bords de carte**, écrit en `2.5`, relève des « limites de monde » de `2.4`. Où est consigné son périmètre ? | **Dans une story dédiée, `2.11`, qui en devient propriétaire.** `2.4` et `2.5` reçoivent un **renvoi** en Notes ; **aucun de leurs critères n'est réécrit**, aucun statut ne change. Motif du rattachement initial à `2.5` : sans sol, la source de dégâts d'impact était inatteignable et `M9` insatisfiable. | Story `2.11` · renvois en `2.4` et `2.5` |
+| Q25 | La **liste de scripts** de la section « Architecture Godot » du CDC est-elle limitative ou indicative ? | **Indicative.** Elle illustre l'organisation, elle n'énumère pas les fichiers autorisés. Restent contraignants : l'**arborescence** (`A1`, `A2`), le **rattachement à une story** (`I1`) et les conventions de nommage (`A4`). Portée **rétroactive** : couvre `CameraSystem.gd`, `GameData.gd` (jusqu'ici arbitré isolément par **Q4**) et les scripts d'UI des phases 4 à 6. L'écart **`E14` est clos**. | Story `2.11` · `stories/AVANCEMENT.md` §4 |
+| Q26 | Le critère 2 de la story `2.11` exigeait une croissance de la sévérité de chute sur **plus de 30 tuiles** ; le résultat mesuré est **25**. Faut-il pousser le réglage ? | **Non — 25 tuiles sont acceptées, `degats_par_px_s` reste à 0,07.** Le seuil de 30 provenait d'une **estimation erronée de l'agent**, non d'une exigence du cahier des charges, et l'objectif réel de `Q23` est atteint : la saturation passe de 8,5 à 25 tuiles. Atteindre 30 aurait exigé un plafond de 1320 px/s, portant la chute maximale à **63 points sur 100** — plus punitif que ce qui avait été retenu. **Le critère 2 reste affiché « partiellement satisfait »** : il est assoupli par décision tracée, jamais réécrit pour coller au résultat. | Story `2.11` · rejugé au playtest `7.6` |
 
 **Contraintes d'implémentation dérivées de Q20-Q22** — à reprendre textuellement dans les critères d'acceptation des stories concernées ; elles sont **opposables à l'audit** du sprint :
 
@@ -480,6 +508,13 @@ Trois arbitrages rendus après la story `1.10`. Ils **font foi** et ne sont pas 
 | Q21 | La non-couverture de « vitesse de forage » est **visible dans la table de traçabilité** de l'amendement et rouverte en post-MVP. Elle ne doit **pas** être comblée en douce par un agent au détour d'une story. | 5, post-MVP | `I5` |
 | Q22 | La phase 6 se clôt par **une seule paire de gates** (`6.9` audit → `6.10` tests). Aucune gate intermédiaire n'est ajoutée, aucune story de la phase 6 n'est déplacée vers une autre phase. | 6 | `I4` |
 | Q22 | Le risque de surcharge reste **ouvert et suivi** au registre `stories/AVANCEMENT.md` §5, en sévérité 🔴, requalifié « accepté ». Un risque accepté n'est pas un risque disparu : il est réexaminé à la **clôture de la phase 5**. | 5, 6 | `I4` |
+| Q23 | Le **seuil d'impact reste non nul et n'est pas un levier d'équilibrage** : le relever rétrécirait la plage de sévérité au lieu de l'étendre, et un seuil nul est refusé au chargement par `GameData`. | 2 | `M8` |
+| Q23 | Tout ajustement ultérieur de la sévérité de chute se fait **en données**, jamais en code. La démonstration est faite : `Q23` n'a modifié **aucune ligne de `.gd`**. | 2, 7 | `D1`, `M8` |
+| Q23 | À vitesse de chute maximale, le déplacement par frame doit rester **inférieur à la taille d'une tuile** (32 px), sans quoi la foreuse traverserait le sol. À 1200 px/s et 60 im/s : **20 px**, marge conservée. **Tout relèvement futur du plafond doit refaire ce calcul.** | 2, 3 | `G5` |
+| Q24 | Le confinement aux bords de carte est une mesure de **phase 2**, **relevée mais non remplacée** par la ceinture de tuiles indestructibles de `3.2` : il reste en seconde barrière, notamment pour une position restaurée hors carte par une sauvegarde corrompue (phase 7). | 2, 3, 7 | `G5`, `K4` |
+| Q24 | Les bords de `data/drill.json` (bloc `monde`) et les dimensions du générateur de `3.2` doivent désigner **la même carte**. Deux sources divergentes produiraient une bande infranchissable mais vide, ou un terrain débordant la zone atteignable. La migration du bloc `monde` vers `data/generation.json` referme ce risque. | 3 | `K5` |
+| Q25 | Un script hors de la liste du CDC reste soumis à l'**arborescence contractuelle** et doit être **rattaché à une story**. La décision porte sur la liste, **pas sur la discipline**. | toutes | `A2`, `I1` |
+| Q26 | Un critère d'acceptation **non satisfait** ne se réécrit pas pour coller au résultat obtenu : il reste affiché tel quel et l'écart est **assoupli par un arbitrage tracé**. Clore une story dans ce cas **exige une décision explicite de l'utilisateur**. | toutes | `I3`, `I5` |
 
 ### En attente
 
@@ -493,4 +528,4 @@ Trois arbitrages rendus après la story `1.10`. Ils **font foi** et ne sont pas 
 | « Profondeur max sûre » du §3.2 | Reportée : effet recouvrant la courbe de risque §4.2, et peu tangible au sens du §3.3 — `Q21` | post-MVP |
 | Distinction puissance / vitesse comme **deux axes d'amélioration** distincts | Non instruite au MVP — conséquence des deux lignes ci-dessus | post-MVP |
 
-> **Historique** : les huit points d'ambiguïté du CDC (Q1 à Q8) ont été tranchés ou déclarés sans objet le 2026-08-29 ; Q9 et Q10 (implémentation) le 2026-08-30, Q11 à Q13 avant la story `1.5`, Q14 et Q15 après. **Q3 et Q8 ont été rouverts puis annulés le 2026-09-06 par Q17.** Q16 à Q19 ont été tranchés le 2026-09-06 (story `1.10`), Q20 à Q22 le même jour (story `1.11`). **Les 22 questions sont closes ; aucune n'est ouverte.**
+> **Historique** : les huit points d'ambiguïté du CDC (Q1 à Q8) ont été tranchés ou déclarés sans objet le 2026-08-29 ; Q9 et Q10 (implémentation) le 2026-08-30, Q11 à Q13 avant la story `1.5`, Q14 et Q15 après. **Q3 et Q8 ont été rouverts puis annulés le 2026-09-06 par Q17.** Q16 à Q19 ont été tranchés le 2026-09-06 (story `1.10`), Q20 à Q22 le même jour (story `1.11`). **Q23 à Q25** ont été tranchés le 2026-09-27 (story `2.11`, sur demande de l'utilisateur avant le commit de la phase 2), et **Q26** le même jour, à l'issue de la revue `po` du sprint 2. **Les 26 questions sont closes ; aucune n'est ouverte.**

@@ -64,12 +64,13 @@ Chaque story contient au minimum : Phase · Statut · Objectif · Dépendances �
 
 ### La gate de fin de sprint
 
-À la fin de chaque sprint, deux stories s'enchaînent **dans l'ordre** :
+> **Depuis le 2026-09-26 (story `2.8`), la gate est unique.** Tu as décidé d'arrêter les campagnes de tests manuels par sprint : la vérification humaine est **regroupée en fin de projet**, dans la recette `7.8`.
 
-1. **Audit qualité code** → checklist `qa/audit-qualite-reference.md` → verdict **Autorisé** ou **KO**.
-2. **Tests manuels humains** (seulement si audit **Autorisé**) → plan `qa/plan-tests-manuels.md` → rapport depuis `qa/rapport-test-template.md`.
+À la fin de chaque sprint, **une seule story** :
 
-**Godot 4.7.2** est installé (`brew install --cask godot`) : les agents disposent du binaire `godot` en ligne de commande et vérifient leur travail en **headless** (`--check-only`, `--import`, `--headless --quit`). En revanche le rendu visuel, le ressenti de contrôle, l'équilibrage, l'audio et l'ergonomie ne sont **pas** vérifiables ainsi : ces critères restent validés **par toi**, dans l'éditeur, lors de la story de tests manuels.
+1. **Audit qualité code** → checklist `qa/audit-qualite-reference.md` → verdict **Autorisé** ou **KO**. Verdict **Autorisé** = commit de phase autorisé.
+
+**Godot 4.7.2** est installé (`brew install --cask godot`) : les agents disposent du binaire `godot` en ligne de commande et vérifient leur travail en **headless** (`--check-only`, `--import`, `--headless --quit`). En revanche le rendu visuel, le ressenti de contrôle, l'équilibrage, l'audio et l'ergonomie ne sont **pas** vérifiables ainsi : ces critères **[H]** s'accumulent d'ici là et seront validés **par toi**, dans l'éditeur, en **une seule campagne** — plan `qa/plan-tests-manuels.md`, rapport depuis `qa/rapport-test-template.md`. Rien ne t'empêche d'ouvrir le jeu quand tu veux entre-temps ; simplement, plus aucune story ne t'y oblige avant la phase 7.
 
 ### Commits Git
 
@@ -135,7 +136,7 @@ godot-dev : corrige les anomalies du rapport de tests du sprint 1
 1. `po : découpe le projet en phases et stories` (le CDC est déjà rédigé).
 2. `po : crée le squelette qa/`.
 3. `godot-dev : implémente la story 1.1` (init du projet Godot + `git init`).
-4. En fin de sprint : `po : lance l'audit qualité` puis les tests manuels.
+4. En fin de sprint : `po : lance l'audit qualité` (gate unique depuis `2.8` ; les tests humains sont regroupés en `7.8`).
 5. En fin de phase : le dev annonce le commit, tu valides.
 
 > Godot 4.7.2 est installé : `godot` en ligne de commande pour les agents, `/Applications/Godot.app` pour ouvrir le projet toi-même.

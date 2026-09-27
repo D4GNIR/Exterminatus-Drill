@@ -13,7 +13,9 @@ Toute action concrète menée sur le projet *doit* être documentée par un fich
 Chaque fichier doit comporter au moins :
 
 1. **Phase** (numéro et nom)
-2. **Statut** : À faire | En cours | Terminée | Bloquée
+2. **Statut** : À faire | En cours | Terminée | Bloquée | Reportée | Annulée
+   - `Reportée` : story volontairement décalée à plus tard, fichier conservé (ex. gates de tests humains → `7.8`, story `2.8`).
+   - `Annulée` : story écartée définitivement, fichier conservé (ex. `0.5`, story `0.10`).
 3. **Objectif** : ce que la tâche doit produire
 4. **Dépendances** : autres stories requises avant celle-ci
 5. **Critères d'acceptation** : conditions vérifiables de fin
@@ -42,16 +44,19 @@ Chaque fichier doit comporter au moins :
 - **Point de validation** : à la fin de chaque story, faire le point avec l'utilisateur (résumé bref des artefacts + critères d'acceptation auto-vérifiés) avant de passer à la story suivante.
 - **Action critique** (commit Git, push, configuration cloud, suppression) : annoncer avant exécution.
 
-## Fin de sprint — audit puis tests humains (obligatoire)
+## Fin de sprint — audit qualité (obligatoire)
 
-À la fin de chaque sprint (voir `stories/BACKLOG.md` et `qa/README.md`), enchaîner **deux stories dédiées**, dans cet ordre :
+> **Décision utilisateur du 2026-09-26 (story `2.8`) : plus de tests manuels humains en fin de sprint.** La vérification humaine est **regroupée en une seule recette de fin de projet**, la story `7.8`. La gate de fin de sprint est donc **unique**.
+
+À la fin de chaque sprint (voir `stories/BACKLOG.md` et `qa/README.md`), **une seule story dédiée** :
 
 1. **Audit qualité code** — checklist `qa/audit-qualite-reference.md` · verdict **Autorisé** ou **KO** en Notes.
-2. **Tests manuels humains** — plan `qa/plan-tests-manuels.md` · rapport `qa/rapport-test-template.md`.
 
-- Ne **pas** démarrer la story tests si l'audit n'est pas **Autorisé**.
-- Ne **pas** commiter la phase tant que les deux stories du sprint ne sont pas **Terminée** (en plus des stories dev du sprint).
-- Exemples réels du projet : `0.4` audit → `0.5` revue · `1.7` audit → `1.8` tests. Les couples des phases ≥ 2 sont **prévisionnels** et se déplacent à chaque insertion de story : ne les recopie pas ici, **les couples exacts font foi dans `stories/BACKLOG.md`**, tableau de la phase concernée.
+- Un audit **KO** ⇒ story de correction dans la phase courante, puis **nouvel audit** consigné dans la même story d'audit.
+- Ne **pas** commiter la phase tant que les stories dev **et** la story d'audit ne sont pas **Terminée**. L'audit **Autorisé** suffit désormais à autoriser le commit.
+- Les critères **[H]** (rendu, ressenti de contrôle, équilibrage, audio, ergonomie) ne sont **jamais cochés par un agent** : ils restent **en attente** et sont tous vérifiés à la recette `7.8`. Chaque story liste ce qui reste à valider visuellement.
+- Les gates de tests humains des sprints 2 à 6 (`2.7`, `3.9`, `4.6`, `5.9`, `6.10`) sont au statut **Reportée** vers `7.8` : fichiers conservés, aucune renumérotation.
+- Exemples réels du projet : `0.4` audit → `0.5` revue **annulée** (`0.10`) · `1.7` audit → `1.8` tests **close sans exécution** · `2.6` audit, `2.7` **reportée** (`2.8`). Les numéros des phases ≥ 3 sont **prévisionnels** et se déplacent à chaque insertion de story : ne les recopie pas ici, **les numéros exacts font foi dans `stories/BACKLOG.md`**, tableau de la phase concernée.
 
 ## Commits Git (obligatoire à la fin de chaque phase)
 

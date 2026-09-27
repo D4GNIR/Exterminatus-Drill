@@ -37,7 +37,10 @@ extends Node
 ## Émis à chaque variation du carburant courant ou de sa capacité.
 signal fuel_changed(current: float, maximum: float)
 ## Émis à chaque variation du blindage courant ou de sa capacité.
-## Q3 : au MVP, aucun système ne décrémente le blindage — la jauge est statique.
+## Décrémenté par `ArmorSystem`, **seul point d'entrée de dégâts** (story 2.5,
+## point d'audit M1) : dégâts d'impact dès la phase 2, menaces de la courbe §4.2
+## en phase 6. *L'arbitrage Q3 — « jauge statique au MVP » — est **annulé par
+## Q17** : ne pas s'y référer.*
 signal armor_changed(current: float, maximum: float)
 ## Émis à chaque variation du solde de crédits impériaux.
 signal credits_changed(credits: int)

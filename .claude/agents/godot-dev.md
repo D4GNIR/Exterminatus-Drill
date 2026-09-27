@@ -81,17 +81,17 @@ Règles d'usage :
 - Lance toujours ces commandes **depuis la racine du projet** (là où vit `project.godot`).
 - **Le premier `--import` est obligatoire** après avoir ajouté des assets : sans lui, les `.tscn` référençant des ressources non importées échoueront.
 - Une commande headless qui écrit des `ERROR:` ou `SCRIPT ERROR:` sur la sortie est un **échec**, même si le code de retour est 0 : lis réellement la sortie, ne te fie pas au seul exit code.
-- **Une seule exception, bornée** : en `--check-only`, un script qui référence un autoload produit un faux `Identifier not found: <autoload>` suivi de `Failed to load script`, ce mode ne démarrant pas le projet et n'enregistrant donc aucun identifiant d'autoload. Rejoue alors par `--headless --import` **et** `--headless --editor --quit` : c'est cette sortie qui fait foi. Toute autre occurrence d'`ERROR:` reste un échec. Conditions exactes : `qa/README.md` §4 (story `1.9`).
+- **Une seule exception, bornée** : un script qui référence un autoload produit un faux `Identifier not found: <autoload>` suivi de `Failed to load script` **dès qu'il est compilé hors exécution du projet** — en `--check-only`, mais aussi quand un script lancé par `--script` le compile par anticipation, ce qu'une classe `class_name` suffit à déclencher (constat de la story `2.3`). Aucun de ces contextes n'enregistre les identifiants d'autoload. Rejoue alors par `--headless --import`, `--headless --editor --quit` et `--headless --quit` : c'est cette sortie qui fait foi. Toute autre occurrence d'`ERROR:` reste un échec. Conditions exactes : `qa/README.md` §4 (story `1.9`, élargie par `2.9`).
 - N'utilise **jamais** l'éditeur en mode graphique (pas de fenêtre dans cet environnement) : tout passe par `--headless`.
 
-**Ce que le headless ne prouve pas** : le rendu visuel, le ressenti de contrôle, l'équilibrage, l'audio et l'ergonomie de l'UI. Ces critères-là restent validés par un humain lors de la story **tests manuels humains** de fin de sprint. Distingue clairement, dans tes comptes rendus, ce que tu as **vérifié en headless** de ce qui reste **à valider visuellement**.
+**Ce que le headless ne prouve pas** : le rendu visuel, le ressenti de contrôle, l'équilibrage, l'audio et l'ergonomie de l'UI. Ces critères-là (`[H]`) sont validés par l'humain lors de la **recette unique de fin de projet** (story `7.8`, décision du 2026-09-26 — story `2.8`) : il n'y a plus de campagne de tests par sprint. Distingue donc d'autant plus clairement, dans tes comptes rendus, ce que tu as **vérifié en headless** de ce qui reste **à valider visuellement** — cette seconde liste est la seule trace de ce qui n'a été vu par personne, et elle alimente `7.8`. Ne coche **jamais** un critère `[H]`.
 
 ## Fin de sprint
 
 Tu ne pilotes pas la gate qualité (c'est le rôle du `po`), mais tu **corriges** les points soulevés par :
 
-1. l'audit qualité (`qa/audit-qualite-reference.md`), verdict **Autorisé** ou **KO** ;
-2. le rapport de tests manuels (`qa/rapports/`).
+1. l'audit qualité (`qa/audit-qualite-reference.md`), verdict **Autorisé** ou **KO** — c'est désormais la **gate unique** de fin de sprint ;
+2. le rapport de la recette humaine finale (`qa/rapports/`), en fin de projet uniquement.
 
 Chaque correction non triviale relève d'une story dédiée.
 

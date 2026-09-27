@@ -44,6 +44,16 @@ Référence CDC : section « Architecture Godot ».
 ## C. Couplage et accès aux nœuds **[B]**
 
 - [ ] C1 **[B]** **Aucun chemin de nœud fragile en dur** : pas de `get_node("../../..")`, pas de `$"../../Machin"`, pas de `get_parent().get_parent()`.
+
+  > **Contrôle opposable** *(complété le 2026-09-27, revue `po` du sprint 2)* :
+  >
+  > ```
+  > grep -rnE 'get_node(_or_null)?\(|get_parent\(\)|\$"?\.\./' scripts/
+  > ```
+  >
+  > ⚠️ La forme `grep -rn "get_node("` employée jusqu'ici **ne matche pas `get_node_or_null(`** et laisserait donc passer un `get_node_or_null("../../X")`. Même classe de défaut que celui corrigé sur `F1` par la story `2.9` : un contrôle trop littéral donne une fausse assurance.
+  >
+  > Une occurrence remontée n'est **pas** automatiquement un KO : un `get_node_or_null(chemin)` dont le chemin vient d'un `@export NodePath` renseigné dans la scène est conforme à `C2`. L'auditeur lit l'origine du chemin — **littéral dans le code** (KO) ou **donnée de scène** (conforme).
 - [ ] C2 Les références internes à une scène passent par `@onready var x: Type = $Enfant` (chemin descendant, stable) ou `@export var x: NodePath/Node` renseigné dans la scène.
 - [ ] C3 **[B]** La communication inter-systèmes passe par **signaux** ou par l'autoload `GameState` — jamais par appel direct à un nœud d'une autre branche.
 - [ ] C4 Les signaux sont **typés** et déclarés explicitement ; les connexions sont faites via `Callable` (pas de chaînes de caractères).
@@ -73,13 +83,21 @@ Référence CDC : section « Données de tuile ».
 
 Référence CDC : section « Contrôles ».
 
-- [ ] F1 **[B]** **Aucun scancode / touche en dur** dans le code (`Key.KEY_Z`, `event.keycode == ...`) : tout passe par l'Input Map.
+- [ ] F1 **[B]** **Aucun scancode / touche en dur** dans le code (`Key.KEY_Z`, `event.keycode == ...`) : tout passe par l'Input Map. Les noms d'action (`&"move_left"`) sont, eux, attendus dans le code : ce sont des identifiants d'Input Map, pas des touches.
+
+  > **Contrôle opposable** *(reformulé par la story `2.9`)* :
+  >
+  > ```
+  > grep -rnE "Key\.KEY_|\.keycode|physical_keycode|scancode" scripts/
+  > ```
+  >
+  > Il doit ne **rien** remonter. ⚠️ **Ne pas utiliser `grep -rn "KEY_\|keycode\|scancode" scripts/`**, forme employée jusqu'au 2026-09-26 : elle remonte **72 faux positifs** — les constantes de **clés JSON** de `GameData` (`KEY_ID`, `KEY_TIERS`, `KEY_GRAVITY`, …), convention posée par la story `1.5`. Un `KEY_*` du projet nomme un champ de données ; une touche en dur se reconnaît à l'énumération `Key` du moteur ou à un champ d'événement clavier.
 - [ ] F2 **[B]** Les 12 actions du CDC existent dans `project.godot` : `move_up`, `move_down`, `move_left`, `move_right`, `drill`, `brake`, `use_item_1`, `use_item_2`, `use_item_3`, `toggle_inventory`, `toggle_journal`, `pause`.
 - [ ] F3 Les touches par défaut correspondent au CDC (ZQSD + flèches, Espace, Shift, 1/2/3, I/Tab, J, Échap).
 - [ ] **F4 [B]** La lecture d'input est faite au bon endroit (`_unhandled_input` pour les actions UI/ponctuelles, `Input.is_action_pressed` dans `_physics_process` pour le mouvement continu) ; les entrées consommées par l'UI ne fuient pas vers le gameplay.
 - [ ] **F5 [B]** *(arbitrage Q10)* **Aucun nœud de gameplay n'implémente `_input()`** — la lecture ponctuelle passe exclusivement par `_unhandled_input()`. Motif : `drill`/Espace, `pause`/Échap, `toggle_inventory`/Tab et les flèches partagent leurs touches avec les actions intégrées `ui_accept`, `ui_cancel`, `ui_focus_next` et `ui_up/down/left/right`. Un `_input()` dans le gameplay recevrait l'événement **avant** l'UI : Espace déclencherait le forage tout en validant un bouton. Contrôle : `grep -rn "func _input(" scripts/ scenes/` ne doit remonter aucun nœud de gameplay.
 - [ ] **F6** Toute UI modale (inventaire, boutique, pause, dialogue) appelle `set_input_as_handled()` ou consomme l'événement, de sorte qu'aucune action de jeu ne se déclenche derrière elle.
-- [ ] F5 Aucune action inutilisée n'est ajoutée hors CDC sans story.
+- [ ] **F7** Aucune action inutilisée n'est ajoutée hors CDC sans story. *(Renuméroté de `F5` en `F7` par la story `2.9` : deux points portaient le même code. Le code `F5` reste attaché à l'interdiction de `_input()`, que les stories `2.2` et `2.3` citent déjà sous ce nom.)*
 
 ## G. Règles de gameplay non négociables **[B]**
 
@@ -116,6 +134,11 @@ Référence CDC : sections « Règles autorisées » et « Règles interdites ou
 - [ ] I4 `stories/BACKLOG.md` reflète les statuts réels.
 - [ ] I5 Les écarts au CDC sont justifiés en *Notes* de story (pas d'écart silencieux).
 - [ ] I6 Aucune story renommée / renumérotée / supprimée (interdits `.claude/CLAUDE.md`).
+- [ ] **I7 [B]** *(ajouté le 2026-09-27, revue `po` du sprint 2 — story `2.12`)* **Les compteurs de `stories/BACKLOG.md` et de `stories/AVANCEMENT.md` concordent**, et le total MVP est **recalculé, jamais recopié**. L'auditeur refait l'addition à la main et compare les deux documents.
+
+  > **Pourquoi ce point est devenu opposable, et bloquant.** La cohérence des compteurs reposait jusqu'ici sur une **discipline de rédaction** (« reprendre §1 et §2/§3 ensemble »), qui a échoué **quatre fois** : 55 → 57 → 58 (corrigé à 59), puis le 2026-09-27 un total de 73 affiché pour une addition qui donnait 70, et deux documents divergents (73 contre 74). Un compteur faux n'est pas cosmétique : c'est l'indicateur d'avancement du projet, et il sert à juger si une phase est complète.
+  >
+  > **Règle de dénombrement**, à appliquer telle quelle : une story **`Annulée`** est **exclue** du total (elle ne sera jamais faite) ; une story **`Reportée`** y est **incluse** (elle sera faite, plus tard et ailleurs). Le contrôle par `ls` ne vaut que sur les **phases ouvertes** — celles dont les fichiers existent : leur nombre de fichiers **moins** le nombre de stories `Annulée` doit égaler le sous-total de ces phases. Les phases non ouvertes n'ont aucun fichier et leurs volumes restent **prévisionnels**. Au 2026-09-27 : 34 fichiers pour les phases 0 à 2, moins 1 `Annulée` (`0.5`) = **33**, plus **42** prévisionnelles pour les phases 3 à 7 = **75**. L'auditeur refait ce calcul.
 
 ## J. Dépôt et configuration
 

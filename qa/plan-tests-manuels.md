@@ -5,9 +5,12 @@ Les agents vérifient en amont ce qui est automatisable en headless ; ce plan ne
 
 Référence fonctionnelle : `cahier_des_charges_motherload_40k_godot.md`, **amendé par `cahier_des_charges_gameplay_addictif.md`** (arbitrage **Q16** du 2026-09-06, story `1.10`). Les cas ajoutés le 2026-09-06 portent la mention de leur § d'origine.
 
+> ⛔ **Régime d'exécution changé le 2026-09-26 — décision utilisateur, story `2.8`.** Il n'y a plus de campagne par sprint : **ce plan est exécuté en une seule fois, en fin de projet**, à la story `7.8` (*recette humaine unique du MVP*). Le plan est **conservé intégralement** — aucun cas supprimé, aucun cas renuméroté : le report change **quand** les cas sont joués, pas **ce qui** est joué. Les sections « Sprint N » ci-dessous restent la structure de lecture et l'**ordre d'exécution** de la campagne finale.
+
 - Chaque cas a un identifiant stable `TM-<phase>.<n>` : **ne pas renuméroter**.
-- Sévérité indicative : **B** = bloquant (interdit le commit de phase), **M** = majeur, **m** = mineur.
-- À chaque fin de sprint : exécuter les cas du sprint **+ les cas de régression** des sprints précédents marqués `[REG]`.
+- Sévérité indicative : **B** = bloquant (interdit la validation du MVP), **M** = majeur, **m** = mineur. *Avant `2.8`, « B » interdisait le commit de phase ; le commit ne dépend plus que de l'audit qualité.*
+- **Campagne unique, dans l'ordre des sprints** : `TM-1.x`, puis `TM-2.x`, … jusqu'à `TM-7.x`. Le marquage `[REG]` perd son rôle de sélection — tous les cas sont joués — mais il est **conservé** : il désigne les cas à **rejouer en priorité** après une correction ou une itération.
+- Les cas du **sprint 0** restent les seuls hors périmètre : ils ont été annulés par la story `0.10`.
 - Le résultat est consigné dans un rapport créé depuis `qa/rapport-test-template.md`, déposé dans `qa/rapports/`.
 
 ---
@@ -23,7 +26,9 @@ Référence fonctionnelle : `cahier_des_charges_motherload_40k_godot.md`, **amen
 | P5 | **Graine du tirage de loot journalisée et reportée** (amendement §2) : la graine effectivement utilisée pour le tirage de loot est affichée au démarrage et **recopiée en en-tête du rapport**. Elle peut être la même que celle de la génération de terrain, mais elle doit être **lisible**. Sans elle, aucun cas de loot n'est rejouable et toute anomalie de drop est irrecevable | à partir du sprint 3 |
 | P6 | **Graine du tirage de menace journalisée** (amendement §4, arbitrage Q17) : le tirage de menace utilise un RNG **distinct** de celui de la génération ; sa graine est journalisée et reportée. Une rencontre hostile ne doit jamais décaler le terrain à graine identique | à partir du sprint 6 |
 
-> Si l'un des prérequis `P1` à `P3` n'est **pas** satisfait sur le poste de test, la story de tests manuels du sprint passe à **Bloquée**, pas à Terminée, et la cause est notée. `P1` étant satisfait depuis la story `0.6`, cette règle ne bloque plus la gate du sprint 1.
+> Si l'un des prérequis `P1` à `P3` n'est **pas** satisfait sur le poste de test, la story de recette `7.8` passe à **Bloquée**, pas à Terminée, et la cause est notée. `P1` étant satisfait depuis la story `0.6`, cette règle ne bloque plus la campagne. **`P4`, `P5` et `P6` (graines figées et journalisées) s'appliquent à toute la campagne finale**, et non plus « à partir du sprint N » : la colonne « Statut » conserve le sprint qui les introduit, mais ils sont tous exigibles à `7.8`.
+
+> **Charge de la campagne finale** : le report des gates `2.7`, `3.9`, `4.6`, `5.9` et `6.10` porte `7.8` à l'intégralité des cas `TM-1.1` à `TM-7.12`, soit une soixantaine de cas en une seule passe. Prévoir **plusieurs séances** et consigner au fil de l'eau — un cas non exécuté se note « Non exécuté », **jamais `OK`**.
 
 > **Règle de campagne (arbitrage Q6, 2026-08-29)** : le terrain étant semi-procédural dès le MVP, **aucun résultat n'est reproductible sans graine fixe**. Toute anomalie rapportée sans la graine de campagne est irrecevable : le rapport de test doit mentionner la graine utilisée en en-tête. Changer de graine en cours de campagne invalide les cas déjà exécutés sur le terrain.
 
@@ -62,7 +67,7 @@ Référence fonctionnelle : `cahier_des_charges_motherload_40k_godot.md`, **amen
 |---|---|---|---|---|
 | TM-1.5 ⏮ | **Test des touches** *(reporté du sprint 1)* | Presser successivement chacune des 12 touches pendant une partie, en maintenant l'appui une seconde | Chaque action est reconnue **une et une seule fois par appui** — la répétition clavier (`echo`) ne redéclenche pas l'action ponctuelle. Identifiant conservé : un cas de test ne se renumérote pas. | M |
 | TM-2.1 `[REG]` | Déplacement 4 directions | Se déplacer dans un tunnel libre avec ZQSD puis les flèches | Déplacement fluide dans les 4 directions, les deux jeux de touches équivalents | B |
-| TM-2.2 `[REG]` | Directions opposées | Presser gauche+droite, puis haut+bas | **Aucun mouvement**, aucune vibration/oscillation, aucune erreur | B |
+| TM-2.2 `[REG]` | Directions opposées | Poser la foreuse **au sol** dans un tunnel, puis presser **gauche+droite** ensemble, relâcher, puis **haut+bas** ensemble. Répéter une fois **en vol**, au-dessus d'un vide. *Procédure précisée par la story `2.2`.* | **Au sol : aucun mouvement**, aucune vibration, aucune oscillation, aucune erreur. **En vol** : les touches s'annulent aussi — ni poussée, ni descente forcée — mais **la gravité continue de s'appliquer** : la chute se poursuit, identique à celle observée touches relâchées. Ce n'est **pas** une anomalie : la gravité n'est pas une direction commandée, et le CDC n'annule que les paires de directions. | B |
 | TM-2.3 | Gravité et chute | Se placer au-dessus d'un vide et lâcher les touches | La foreuse tombe, atterrit sans traverser le sol | B |
 | TM-2.4 | Propulsion | Maintenir `move_up` dans un tunnel vide | Montée progressive, consommation de carburant visible | M |
 | TM-2.5 | Freinage | Maintenir `brake` en mouvement | Vitesse et inertie visiblement réduites | m |
@@ -70,6 +75,7 @@ Référence fonctionnelle : `cahier_des_charges_motherload_40k_godot.md`, **amen
 | TM-2.7 | Caméra | Se déplacer largement | La caméra suit sans saccade et ne sort pas des limites définies | m |
 | TM-2.8 `[REG]` | Panne sèche | Épuiser le carburant | Ni forage ni propulsion possibles ; la chute reste possible ; message/alerte clair | B |
 | TM-2.9 `[REG]` | **Dégâts de chute et d'impact** (Q20, amendement §4.3) | Trois chutes de hauteurs croissantes : (a) une chute courte, sous le seuil ; (b) une chute moyenne ; (c) la plus haute chute possible sur la carte. Relever la valeur de blindage avant et après chacune | (a) **aucun dégât** : sous le seuil, le déplacement normal n'est jamais punitif — un déplacement ordinaire qui grignote le blindage est un échec. (b) et (c) : le blindage est **réellement décrémenté** à l'écran, et les dégâts **croissent avec la vitesse d'impact** — la chute (c) coûte nettement plus que la (b). Consigner les 3 valeurs. Ce cas est la **preuve visible** que l'`ArmorSystem` a un appelant dès le sprint 2 | B |
+| TM-2.11 `[REG]` | **Arbre de `DrillRig.tscn` et foreuse visible** (story `2.1`) | Ouvrir `scenes/player/DrillRig.tscn` dans l'éditeur et déplier l'arbre dans le dock **Scène** (*Scene*). Puis ouvrir `Main.tscn` et lancer `F5` | L'arbre affiche **exactement 10 nœuds** — `DrillRig` (**CharacterBody2D**), `Sprite2D`, `CollisionShape2D`, `DrillSystem`, `FuelSystem`, `ArmorSystem`, `ScannerSystem`, `Audio`, et sous `Audio` : `EngineAudio`, `DrillAudio`, `AlertAudio` (soit 11 avec les 3 enfants d'`Audio` — les compter à l'écran). **Aucun avertissement de configuration** : une `CollisionShape2D` sans forme en produirait un. Dans `Main.tscn`, `DrillRig` apparaît comme **instance** entre `World` et `Camera2D`, et **la foreuse est visible à l'écran** au lancement | M |
 | TM-2.10 | **État de destruction de la foreuse** (Q17, Q20) | Enchaîner des chutes jusqu'à amener le blindage à **zéro** | La transition vers l'état « détruite » est **explicite et lisible** (retour visuel et sonore) ; le jeu ne plante pas, ne se fige pas, et la foreuse n'est ni pilotable ni capable de forer pendant la transition. **Au sprint 2, il n'y a encore ni cargo ni sauvegarde** : la vérification complète de la règle §4.3 (« la perte n'est jamais totale ») est faite par `TM-6.8`, une fois le cargo et la sauvegarde livrés. Ici, seul le comportement de l'état est jugé | M |
 
 ---
@@ -156,6 +162,8 @@ Référence fonctionnelle : `cahier_des_charges_motherload_40k_godot.md`, **amen
 
 ## Sprint 7 — Sauvegarde locale et recette MVP
 
+> Ces cas closent la campagne unique `7.8` : ils sont joués **après** `TM-1.x` à `TM-6.x`, pas à leur place.
+
 | ID | Cas | Procédure | Attendu | Sév. |
 |---|---|---|---|---|
 | TM-7.1 `[REG]` | Sauvegarde/chargement | Jouer, sauvegarder, quitter, relancer, charger | **Position, ressources, crédits, améliorations et flags narratifs** restitués à l'identique | B |
@@ -202,6 +210,7 @@ Référence fonctionnelle : `cahier_des_charges_motherload_40k_godot.md`, **amen
 |---|---|---|---|---|
 | Valeurs de départ de `GameState` lues à l'écran (carburant, blindage, crédits, soute, profondeur) | `TM-1.6` e-l | Variables **privées non exportées** : l'Inspecteur ne les affiche pas de façon garantie, et aucun artefact de debug ne peut être créé pour y remédier (`A5`) | **`TM-4.1`** (sprint 4, HUD) | `1.12` |
 | Déclenchement d'une action par appui, une seule fois | `TM-1.5` | Aucun code ne consomme les entrées avant la phase 2 | **Sprint 2** — identifiant conservé | `1.3` / **Q9** |
+| **Volet « action ponctuelle » de `TM-1.5`** : une action ponctuelle ne se redéclenche pas sous la répétition clavier (`echo`) | `TM-1.5` | La story `2.2` ne livre que du **déplacement continu** (`Input.is_action_pressed` / `get_axis`), par nature insensible à l'`echo`. **Aucune action ponctuelle n'existe encore** dans le jeu, et en créer une pour le test serait un artefact de debug (`A5`). Le volet « touches de déplacement reconnues, une fois par appui » reste, lui, jouable dès `2.2` | **Sprint 3**, avec `drill` (story `3.4`) — premier `_unhandled_input()` du projet | `2.2` |
 
 ## Traçabilité — amendement « gameplay addictif » et arbitrages du 2026-09-06
 
@@ -227,6 +236,7 @@ Référence fonctionnelle : `cahier_des_charges_motherload_40k_godot.md`, **amen
 |---|---|---|
 | **Q20** — dégâts de chute et d'impact | Dégâts proportionnels à la vitesse, seuil en deçà duquel rien n'est infligé, blindage réellement décrémenté | **TM-2.9** |
 | **Q20** × **Q17** | État de destruction explicite dès le sprint 2 *(règle §4.3 complète vérifiée par `TM-6.8`)* | TM-2.10 |
+| Arbre contractuel de `DrillRig.tscn` (« Architecture Godot ») | 10 nœuds affichés, aucun avertissement, foreuse visible en jeu | TM-2.11 |
 | **Q21** — quatre améliorations actives | `blindage` achetable au-delà du palier 1 et **ressenti** (§3.3) | **TM-5.13** |
 | **Q21** — périmètre du catalogue | Exactement 4 améliorations, aucune « profondeur max sûre » | TM-5.14 |
 | **Q21** — non-couverture assumée | « Vitesse de forage » du §3.2 : `foret` reste une **puissance** au MVP | *aucun cas — non couvert, tracé au backlog, à rouvrir post-MVP* |
