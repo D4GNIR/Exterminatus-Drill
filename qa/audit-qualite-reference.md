@@ -56,6 +56,17 @@ Référence CDC : section « Architecture Godot ».
   > Une occurrence remontée n'est **pas** automatiquement un KO : un `get_node_or_null(chemin)` dont le chemin vient d'un `@export NodePath` renseigné dans la scène est conforme à `C2`. L'auditeur lit l'origine du chemin — **littéral dans le code** (KO) ou **donnée de scène** (conforme).
 - [ ] C2 Les références internes à une scène passent par `@onready var x: Type = $Enfant` (chemin descendant, stable) ou `@export var x: NodePath/Node` renseigné dans la scène.
 - [ ] C3 **[B]** La communication inter-systèmes passe par **signaux** ou par l'autoload `GameState` — jamais par appel direct à un nœud d'une autre branche.
+
+  > **Précision opposable** *(arbitrage **Q38** du 2026-09-27, story `3.13`)* :
+  >
+  > Un appel vers un nœud d'une autre branche est **conforme** quand les **trois** conditions sont réunies :
+  > 1. la référence est **injectée par la scène** — `@export var x: NodePath` renseigné dans le `.tscn`, résolu **une seule fois** dans `_ready()` (donc conforme à `C1` et `C2`) ;
+  > 2. l'appel sert une **requête synchrone** dont l'appelant a besoin du résultat (interroger une cellule, obtenir une position), ou une **commande** sur l'objet de cette requête, ce qu'un signal ne peut pas rendre ;
+  > 3. le type appelé est **nommé** (`class_name`), et son API est documentée comme destinée à ces appels.
+  >
+  > Il reste **non conforme** — `C3` en KO — si la référence est obtenue par un **chemin littéral** dans le code (`C1`), ou si l'appel sert à **notifier** un événement : une notification passe **toujours** par un signal.
+  >
+  > Cas couverts à la date de la précision : `MiningSystem` → `TerrainSystem` (`world_to_cell`, `get_cell_info`, `cell_to_world`, `destroy_cell` ; story `3.4`), `DrillRig` → `TerrainSystem` (`add_child` de la scène d'effet ; story `3.7`) et `CameraSystem` → `DrillRig` (lecture de position ; story `2.4`). **Motif** : `GameState` porte l'état de partie (`C6`) et ne doit pas devenir un service de terrain ; un signal ne rend pas de valeur.
 - [ ] C4 Les signaux sont **typés** et déclarés explicitement ; les connexions sont faites via `Callable` (pas de chaînes de caractères).
 - [ ] C5 Les connexions créées dynamiquement sont déconnectées ou nettoyées si le nœud peut disparaître (pas de fuite de signal).
 - [ ] C6 L'autoload `GameState` porte l'**état**, pas la logique de gameplay des systèmes.
@@ -139,6 +150,20 @@ Référence CDC : sections « Règles autorisées » et « Règles interdites ou
   > **Pourquoi ce point est devenu opposable, et bloquant.** La cohérence des compteurs reposait jusqu'ici sur une **discipline de rédaction** (« reprendre §1 et §2/§3 ensemble »), qui a échoué **quatre fois** : 55 → 57 → 58 (corrigé à 59), puis le 2026-09-27 un total de 73 affiché pour une addition qui donnait 70, et deux documents divergents (73 contre 74). Un compteur faux n'est pas cosmétique : c'est l'indicateur d'avancement du projet, et il sert à juger si une phase est complète.
   >
   > **Règle de dénombrement**, à appliquer telle quelle : une story **`Annulée`** est **exclue** du total (elle ne sera jamais faite) ; une story **`Reportée`** y est **incluse** (elle sera faite, plus tard et ailleurs). Le contrôle par `ls` ne vaut que sur les **phases ouvertes** — celles dont les fichiers existent : leur nombre de fichiers **moins** le nombre de stories `Annulée` doit égaler le sous-total de ces phases. Les phases non ouvertes n'ont aucun fichier et leurs volumes restent **prévisionnels**. Au 2026-09-27 : 34 fichiers pour les phases 0 à 2, moins 1 `Annulée` (`0.5`) = **33**, plus **42** prévisionnelles pour les phases 3 à 7 = **75**. L'auditeur refait ce calcul.
+
+  > **Précision opposable — source unique** *(arbitrage **Q39** du 2026-09-27, story `3.15`)* :
+  >
+  > Depuis `Q39`, **`stories/AVANCEMENT.md` est la seule source des compteurs** : effectifs par phase (convention `Q40` : stories comptées, une `Annulée` en mention), total MVP, nombre de `Terminée`, avancement, registre des critères `[H]`. L'auditeur :
+  > 1. **recalcule à la main** ces compteurs en lisant le champ `## Statut` de chaque fichier de `stories/`, et les compare à **toutes** leurs occurrences dans `AVANCEMENT.md` (en-tête, §1, table des phases et ligne « Total MVP », tables de détail §3.x et lignes de registre) ;
+  > 2. vérifie que **`stories/BACKLOG.md` ne contient aucun compteur non historique** : il ne porte que le statut de chaque story. Ses encadrés « Révision du … » sont historiques et figés.
+  >
+  > Un compteur non historique **faux**, ou **présent hors d'`AVANCEMENT.md`**, est un KO `I7`. Est historique une mention **explicitement datée** ou marquée « à l'ouverture », « énoncé d'origine » ou « contexte précédent ». La recherche se fait **en plein texte**, et non ligne par ligne sur les seuls endroits signalés : c'est ce qui a fait échouer les itérations 1 à 3 de l'audit `3.8`.
+
+  > **Précision opposable — archive et emplacements de référence** *(arbitrage **Q43** du 2026-09-27, story `3.16`)* :
+  >
+  > 1. **`stories/AVANCEMENT-historique.md` est hors périmètre de `I7`.** C'est un document historique, figé le 2026-09-27, qui reçoit par transfert l'historique d'`AVANCEMENT.md`. L'auditeur ne le recherche pas. Il vérifie seulement qu'**aucun contenu courant** n'y a été ajouté après sa date de gel.
+  > 2. **Dans `AVANCEMENT.md`, un compteur ne figure qu'aux emplacements de référence** : les lignes « Stories créées », « Stories terminées » et « Avancement MVP » du §1, la table des phases et sa ligne « Total MVP », et le **registre `[H]`**. La prose (en-tête, autres lignes du §1, détail de la phase courante, couverture, risques, recommandations) ne porte **aucun** chiffre de stories, de `Terminée`, de pourcentage d'avancement ni de critères `[H]` : elle **renvoie** aux emplacements de référence. Un compteur trouvé dans la prose est un KO `I7`, **même si sa valeur est juste**.
+  > 3. `AVANCEMENT.md` ne conserve que l'état **courant** : les risques et recommandations résolus, les énoncés d'origine et les contextes précédents vont dans l'archive. Les renvois antérieurs au 2026-09-27 vers une section d'`AVANCEMENT.md` se lisent dans l'archive.
 
 ## J. Dépôt et configuration
 

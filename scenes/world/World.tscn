@@ -1,11 +1,104 @@
-[gd_scene format=3 uid="uid://dewhr0lq7rkwb"]
+[gd_scene load_steps=5 format=3 uid="uid://dewhr0lq7rkwb"]
+
+[ext_resource type="Texture2D" uid="uid://bbvk6uhd3pchw" path="res://assets/sprites/tile_atlas_32x32.png" id="1_atlas"]
+[ext_resource type="Script" uid="uid://clu0d42yogaa8" path="res://scripts/systems/TerrainSystem.gd" id="2_terrain"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_terrain"]
+texture = ExtResource("1_atlas")
+texture_region_size = Vector2i(32, 32)
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
+0:0/0/custom_data_0 = true
+0:0/0/custom_data_1 = 1
+0:0/0/custom_data_2 = ""
+0:0/0/custom_data_3 = 0
+0:0/0/custom_data_4 = ""
+0:0/0/custom_data_5 = true
+1:0/0 = 0
+1:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
+1:0/0/custom_data_0 = true
+1:0/0/custom_data_1 = 2
+1:0/0/custom_data_2 = ""
+1:0/0/custom_data_3 = 0
+1:0/0/custom_data_4 = ""
+1:0/0/custom_data_5 = true
+2:0/0 = 0
+2:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
+2:0/0/custom_data_0 = true
+2:0/0/custom_data_1 = 3
+2:0/0/custom_data_2 = ""
+2:0/0/custom_data_3 = 0
+2:0/0/custom_data_4 = ""
+2:0/0/custom_data_5 = true
+3:0/0 = 0
+3:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
+3:0/0/custom_data_0 = false
+3:0/0/custom_data_1 = 0
+3:0/0/custom_data_2 = ""
+3:0/0/custom_data_3 = 0
+3:0/0/custom_data_4 = ""
+3:0/0/custom_data_5 = false
+4:0/0 = 0
+4:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
+4:0/0/custom_data_0 = true
+4:0/0/custom_data_1 = 1
+4:0/0/custom_data_2 = "fer_industriel"
+4:0/0/custom_data_3 = 12
+4:0/0/custom_data_4 = ""
+4:0/0/custom_data_5 = true
+5:0/0 = 0
+5:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
+5:0/0/custom_data_0 = true
+5:0/0/custom_data_1 = 2
+5:0/0/custom_data_2 = "promethium_brut"
+5:0/0/custom_data_3 = 45
+5:0/0/custom_data_4 = ""
+5:0/0/custom_data_5 = true
+6:0/0 = 0
+6:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
+6:0/0/custom_data_0 = true
+6:0/0/custom_data_1 = 3
+6:0/0/custom_data_2 = "adamantium"
+6:0/0/custom_data_3 = 180
+6:0/0/custom_data_4 = ""
+6:0/0/custom_data_5 = true
+7:0/0 = 0
+7:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
+7:0/0/custom_data_0 = true
+7:0/0/custom_data_1 = 5
+7:0/0/custom_data_2 = "relique_xeno"
+7:0/0/custom_data_3 = 1000
+7:0/0/custom_data_4 = ""
+7:0/0/custom_data_5 = true
+
+[sub_resource type="TileSet" id="TileSet_terrain"]
+tile_size = Vector2i(32, 32)
+physics_layer_0/collision_layer = 1
+custom_data_layer_0/name = "mineable"
+custom_data_layer_0/type = 1
+custom_data_layer_1/name = "hardness"
+custom_data_layer_1/type = 2
+custom_data_layer_2/name = "resource_id"
+custom_data_layer_2/type = 4
+custom_data_layer_3/name = "value"
+custom_data_layer_3/type = 2
+custom_data_layer_4/name = "hazard_type"
+custom_data_layer_4/type = 4
+custom_data_layer_5/name = "destructible"
+custom_data_layer_5/type = 1
+sources/0 = SubResource("TileSetAtlasSource_terrain")
 
 [node name="World" type="Node2D"]
+script = ExtResource("2_terrain")
 
 [node name="TerrainLayer" type="TileMapLayer" parent="."]
+tile_set = SubResource("TileSet_terrain")
 
 [node name="OreLayer" type="TileMapLayer" parent="."]
+tile_set = SubResource("TileSet_terrain")
 
 [node name="DecorationsLayer" type="TileMapLayer" parent="."]
+tile_set = SubResource("TileSet_terrain")
+collision_enabled = false
 
 [node name="Hazards" type="Node2D" parent="."]

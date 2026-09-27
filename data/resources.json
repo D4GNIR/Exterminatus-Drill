@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "commentaire": "Catalogue des minerais (CDC section « Ressources »). Story 1.5. Les `id` sont DEFINITIFS : ils servent de `resource_id` dans les Custom Data Layers du TileSet (story 3.1) et de clefs de soute dans les sauvegardes (story 7.1). `valeur_credits` alimente la donnee de tuile `value`, `hardness_min` la donnee `hardness`, `hazard_type` la donnee `hazard_type`. `actif_mvp=false` : la ressource est decrite mais le generateur de terrain (story 3.2) ne doit JAMAIS la placer au MVP.",
+  "commentaire": "Catalogue des minerais (CDC section « Ressources »). Story 1.5. Les `id` sont DEFINITIFS : ils servent de `resource_id` dans les Custom Data Layers du TileSet (story 3.1) et de clefs de soute dans les sauvegardes (story 7.1). `valeur_credits` alimente la donnee de tuile `value`, `hardness_min` la donnee `hardness`, `hazard_type` la donnee `hazard_type`. `actif_mvp=false` : la ressource est decrite mais le generateur de terrain (story 3.2) ne doit JAMAIS la placer au MVP. Arbitrage Q29 du 2026-09-27 (story 3.10) : promethium_brut et relique_xeno passent actif_mvp a true, portant a QUATRE les ressources actives, afin que les cinq rarEtEs de la table de loot du §2.2 de l'amendement aient toutes un support de donnees (Rien / commun=fer_industriel / relique mineure=promethium_brut / relique rare=adamantium / artefact legendaire=relique_xeno). AUCUN id n'a ete cree ni renomme : la contrainte Q12 reste intacte, meme procede que Q21 pour l'amelioration blindage. cristaux_plasma reste actif_mvp=false, l'elargissement etant borne a deux ressources.",
   "ressources": [
     {
       "id": "fer_industriel",
@@ -33,7 +33,7 @@
       "masse_soute": 1,
       "risque": "inflammable",
       "hazard_type": "promethium",
-      "actif_mvp": false
+      "actif_mvp": true
     },
     {
       "id": "adamantium",
@@ -66,7 +66,7 @@
       "masse_soute": 3,
       "risque": "declencheur_narratif",
       "hazard_type": "warp",
-      "actif_mvp": false
+      "actif_mvp": true
     }
   ]
 }

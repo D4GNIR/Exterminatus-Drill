@@ -34,6 +34,7 @@ signal fuel_low(ratio: float)
 var _thrust_consumption: float = 0.0
 var _idle_consumption: float = 0.0
 var _low_ratio: float = 0.0
+var _drilled_tile_consumption: float = 0.0
 
 ## Panne sèche en cours. Cet unique booléen porte la transition exigée par le
 ## point d'audit `H3` : il n'existe aucun état intermédiaire entre « peut agir »
@@ -56,6 +57,7 @@ func _ready() -> void:
 	_thrust_consumption = GameData.get_fuel_thrust_consumption()
 	_idle_consumption = GameData.get_fuel_idle_consumption()
 	_low_ratio = GameData.get_fuel_low_ratio()
+	_drilled_tile_consumption = GameData.get_fuel_per_drilled_tile()
 	GameState.fuel_changed.connect(_on_fuel_changed)
 	# L'état initial n'est pas une transition : il est constaté, jamais émis.
 	# Émettre ici enverrait un signal avant que le parent ait eu son `_ready()`
@@ -85,6 +87,16 @@ func consume_thrust(delta: float) -> void:
 	if _depleted:
 		return
 	_consume(_thrust_consumption * delta)
+
+
+## Coût d'une tuile détruite, appelé par `MiningSystem` **après** la destruction
+## (story 3.4, `TM-3.9`). `MiningSystem` a déjà vérifié `has_fuel()` avant de
+## détruire : la garde ci-dessous n'est qu'une seconde barrière. Une dernière
+## tuile peut faire passer le réservoir sous zéro, mais `GameState` borne à 0.
+func consume_drilled_tile() -> void:
+	if _depleted:
+		return
+	_consume(_drilled_tile_consumption)
 
 
 func _consume(amount: float) -> void:

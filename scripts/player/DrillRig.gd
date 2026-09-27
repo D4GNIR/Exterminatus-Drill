@@ -4,8 +4,11 @@ extends CharacterBody2D
 ##
 ## Porte **la physique de déplacement** et rien d'autre : gravité, inertie,
 ## propulsion, descente, freinage, et annulation des directions opposées. Le
-## forage appartient à `DrillSystem` (story 3.4), la consommation de carburant à
-## `FuelSystem` (story 2.3), les dégâts à `ArmorSystem` (story 2.5).
+## forage appartient à `DrillSystem` (`MiningSystem`, story 3.4), la consommation
+## de carburant à `FuelSystem` (story 2.3), les dégâts à `ArmorSystem` (story 2.5).
+## La foreuse **branche** ces composants et réagit à leurs signaux : pendant un
+## forage vers le bas, elle s'aligne sur la colonne forée pour pouvoir y
+## descendre — c'est un déplacement, donc c'est ici.
 ##
 ## Contraintes de conception, opposables à l'audit :
 ## [br]— **Aucune valeur de gameplay ici** (points d'audit `D1`/`D4`, arbitrage
@@ -15,13 +18,15 @@ extends CharacterBody2D
 ## actions sont celles déclarées dans `project.godot` (story 1.3).
 ## [br]— **Aucun `_input()`** (`F5 [B]`, arbitrage Q10). Le déplacement est une
 ## lecture **continue** : `Input.is_action_pressed()` / `Input.get_axis()` dans
-## `_physics_process()`. Cette story n'introduit **aucune action ponctuelle** —
-## il n'y a donc pas non plus de `_unhandled_input()` à écrire : il serait vide,
-## donc du code mort (`B6`). Le premier arrivera avec `drill` (story 3.4).
+## `_physics_process()`. Aucune **action ponctuelle** n'existe encore : le forage
+## est lui aussi un appui maintenu (story 3.4). Il n'y a donc pas de
+## `_unhandled_input()` à écrire — il serait vide, donc du code mort (`B6`).
 ## [br]— **Aucun chemin de nœud fragile** (`C1`/`C2`) : ce script ne connaît ni
 ## ses frères ni ses parents. Il ne référence que **ses propres enfants**, par
 ## chemin descendant `$Enfant` (`C2`), et publie son état par l'autoload
-## `GameState` (`C3`).
+## `GameState` (`C3`). Le terrain, que le forage doit connaître, lui est donné
+## par un **export de scène** renseigné dans `Main.tscn` — même procédé que la
+## cible de `CameraSystem`.
 ## [br]— **Validation headless** : ce fichier référence les autoloads `GameData`
 ## et `GameState`. `--check-only` ne résout pas un identifiant d'autoload et
 ## signale un faux « Identifier not found » — exception bornée de la story `1.9`.
@@ -36,6 +41,16 @@ const ACTION_MOVE_RIGHT: StringName = &"move_right"
 const ACTION_MOVE_UP: StringName = &"move_up"
 const ACTION_MOVE_DOWN: StringName = &"move_down"
 const ACTION_BRAKE: StringName = &"brake"
+
+## Scène d'effet du forage (story 3.7), préchargée (`H6`) et instanciée sous le
+## monde au démarrage : elle ne fait partie d'aucun arbre contractuel.
+const DRILL_FEEDBACK_SCENE: PackedScene = preload("res://scenes/world/DrillFeedback.tscn")
+
+## Chemin du monde (`TerrainSystem`), renseigné dans `Main.tscn`. `NodePath` plutôt
+## que nœud typé, pour la raison documentée dans `CameraSystem` : un `.tscn`
+## rédigé à la main ne porte pas la table `node_paths`. Vide, le forage reste
+## désactivé et le signale.
+@export var terrain_path: NodePath
 
 # --- Paramètres de physique ---------------------------------------------------
 # Relevés une seule fois depuis `GameData` : `_physics_process()` est un chemin
@@ -62,7 +77,14 @@ var _pixels_per_meter: float = 0.0
 
 @onready var _fuel_system: FuelSystem = $FuelSystem
 @onready var _armor_system: ArmorSystem = $ArmorSystem
+@onready var _drill_system: MiningSystem = $DrillSystem
+
+## Règle de soute (story 3.5). Objet et non nœud : l'arbre de `DrillRig.tscn` est
+## figé à 11 nœuds (story 2.1). **Public en lecture** : ses signaux `cargo_full`,
+## `ore_lost` et son compteur de perte sont destinés au HUD de la story 4.2 (`G10`).
+var cargo_system: CargoSystem = CargoSystem.new()
 @onready var _alert_audio: AudioStreamPlayer2D = $Audio/AlertAudio
+@onready var _drill_audio: AudioStreamPlayer2D = $Audio/DrillAudio
 @onready var _collision_shape: CollisionShape2D = $CollisionShape2D
 
 # --- Bords de carte et détection de choc --------------------------------------
@@ -74,6 +96,10 @@ var _half_extents: Vector2 = Vector2.ZERO
 ## Appui au sol à la frame précédente : c'est **le passage** de faux à vrai qui
 ## constitue un choc, pas le fait d'être posé.
 var _was_grounded: bool = false
+## Alignement horizontal pendant un forage vers le bas : la foreuse fait la
+## largeur d'une tuile, elle ne descend dans le puits que centrée sur sa colonne.
+var _aligning: bool = false
+var _align_x: float = 0.0
 
 
 ## Si le bloc `physique` de `data/drill.json` a été rejeté au chargement,
@@ -103,9 +129,24 @@ func _ready() -> void:
 	_armor_system.armor_low.connect(_on_armor_low)
 	_armor_system.destruction_started.connect(_on_destruction_started)
 	_armor_system.destruction_finished.connect(_on_destruction_finished)
+	_setup_drilling()
 	_world_bounds = GameData.get_world_bounds()
 	_half_extents = _read_half_extents()
+	_place_at_spawn()
 	_publish_state()
+
+
+## Pose la foreuse **sur le sol** du point d'apparition (story 3.3, critère 4) :
+## contact au sol donné par `GameData`, moins la demi-hauteur de la foreuse. Aucune
+## coordonnée en dur dans la scène ni ici (critère 6). Sans ancrage chargé, la
+## foreuse reste où la scène l'a mise et l'erreur est signalée — jamais de
+## position de repli inventée.
+func _place_at_spawn() -> void:
+	if not GameData.has_anchors():
+		push_error("DrillRig — aucun point d'apparition chargé depuis %s : foreuse laissée à sa position de scène." % GameData.GENERATION_PATH)
+		return
+	global_position = GameData.get_spawn_ground_position() - Vector2(0.0, _half_extents.y)
+	velocity = Vector2.ZERO
 
 
 ## Demi-empreinte de la foreuse, lue depuis **sa propre forme de collision** et
@@ -145,6 +186,12 @@ func _physics_process(delta: float) -> void:
 ## vers l'arrêt. L'annulation est arithmétique, pas arbitrée par une suite de
 ## `if` : c'est ce qui exclut toute oscillation (point d'audit `G3`, cas `TM-2.2`).
 func _update_horizontal_velocity(delta: float, braking: bool, controllable: bool) -> void:
+	if _aligning:
+		# Vitesse qui rejoint la colonne en une frame, plafonnée à la vitesse
+		# horizontale maximale : l'alignement n'est jamais plus rapide qu'un
+		# déplacement ordinaire.
+		velocity.x = clampf((_align_x - global_position.x) / delta, -_horizontal_max_speed, _horizontal_max_speed)
+		return
 	var direction: float = Input.get_axis(ACTION_MOVE_LEFT, ACTION_MOVE_RIGHT) if controllable else 0.0
 	var max_speed: float = _horizontal_max_speed * _speed_scale(braking)
 	if is_zero_approx(direction):
@@ -209,6 +256,62 @@ func _contain_within_world() -> bool:
 		velocity.y = 0.0
 	global_position = clamped
 	return is_equal_approx(clamped.y, upper.y)
+
+
+## Branche le forage sur le terrain désigné par la scène. Sans terrain, la
+## foreuse reste pilotable mais ne fore pas — panne visible, jamais silencieuse.
+func _setup_drilling() -> void:
+	var terrain: TerrainSystem = get_node_or_null(terrain_path) as TerrainSystem
+	if terrain == null:
+		push_error("DrillRig — terrain introuvable ou non TerrainSystem (« %s ») : forage désactivé." % terrain_path)
+		return
+	_drill_system.drilling_started.connect(_on_drilling_started)
+	_drill_system.drilling_stopped.connect(_on_drilling_stopped)
+	_drill_system.drill_refused.connect(_on_drill_refused)
+	_drill_system.setup(self, _fuel_system, _armor_system, terrain)
+	# Le retour visuel vit dans le monde, pas sur la foreuse : ajouté en différé,
+	# `World` et `Main` finissant leur propre mise en place.
+	var feedback: DrillFeedback = DRILL_FEEDBACK_SCENE.instantiate()
+	feedback.bind(_drill_system)
+	terrain.add_child.call_deferred(feedback)
+	if cargo_system.setup():
+		_drill_system.tile_drilled.connect(_on_tile_drilled)
+		cargo_system.cargo_full.connect(_on_cargo_full)
+
+
+## Le forage commence : la soute est consultée **avant** la destruction, pour que
+## son alerte précède toute perte (`G9`).
+func _on_drilling_started(_cell: Vector2i, direction: Vector2i, cell_center: Vector2, _duration: float, resource_id: String) -> void:
+	cargo_system.on_drilling_started(resource_id)
+	# Son de forage (story 3.7) : flux réel en boucle, `sfx_drill_loop.wav`.
+	if not _drill_audio.playing:
+		_drill_audio.play()
+	if direction != MiningSystem.DIRECTION_DOWN:
+		return
+	_aligning = true
+	_align_x = cell_center.x
+
+
+func _on_drilling_stopped() -> void:
+	_aligning = false
+	_drill_audio.stop()
+
+
+func _on_tile_drilled(_cell: Vector2i, resource_id: String) -> void:
+	cargo_system.on_tile_drilled(resource_id)
+
+
+## Alerte « soute pleine » (CDC « Direction sonore », `Q5`) : flux réel de
+## `AlertAudio`. Son affichage est livré par la story 4.2.
+func _on_cargo_full() -> void:
+	_alert_audio.play()
+
+
+## Retour explicite d'un forage refusé (critère 5 de la story 3.4, `TM-3.5`) :
+## émis une fois par tuile visée, jamais à chaque frame. Le retour visuel et un
+## son dédié sont l'objet de la story 3.7.
+func _on_drill_refused(_cell: Vector2i, _reason: MiningSystem.RefusalReason) -> void:
+	_alert_audio.play()
 
 
 ## Retours d'alerte. `AlertAudio` appartient à la foreuse, pas au composant :

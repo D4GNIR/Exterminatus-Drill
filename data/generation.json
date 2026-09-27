@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "commentaire": "Parametres de generation du terrain (arbitrage Q6 : terrain semi-procedural des le MVP ; fichier cree par la story 3.2 au titre de Q15). CE FICHIER EST LA SOURCE DE VERITE DES DIMENSIONS DE LA CARTE : le bloc `monde` a ete MIGRE depuis data/drill.json, ou la story 2.4 l'hebergeait a titre temporaire. Les dimensions y sont exprimees EN TUILES et non en pixels : les quatre bords de carte en pixels en sont DERIVES par GameData.get_world_bounds(), qui reste la facade unique. C'est ce qui referme la contrainte derivee de Q24 par construction plutot que par vigilance : le generateur et le confinement de la foreuse ne peuvent pas decrire deux cartes differentes, puisqu'ils lisent la meme donnee. 1 tuile = 1 m = 32 px (verrouille par la story 3.1). Le bloc `ancrages` (story 3.3, point d'audit K3) porte les positions qui ne dependent JAMAIS de la graine, en tuiles : colonne 0 = centre de la carte, rangee 0 = premiere rangee sous la ligne de surface. `zone_surface_colonne_min`/`max` bornent la zone de surface (ancrage geographique seul ; la station est l'objet de la story 5.1). `apparition_colonne` est la colonne ou la foreuse apparait, posee sur la rangee 0, toujours pleine : la position en pixels en est derivee par GameData.get_spawn_ground_position(). `anomalie_colonne`/`anomalie_rangee` marquent l'emplacement de l'anomalie scenarisee (story 6.4) : au sprint 3 ce n'est qu'un marqueur, sur lequel le generateur ne pose jamais de minerai. Rangee 305 = 305,5 m, dans le palier « 300 m+ » : valeur provisoire, a rejuger en 6.4. Le bloc `loot` (story 3.6, amendement §2.1 a §2.3, arbitrages Q19, Q28, Q29, Q30) est la table de loot des cases STERILES (Q28 : une tuile portant un `resource_id` donne ce minerai, sans tirage). `entrees` : les cinq raretes du §2.2, chacune liee a une ressource ACTIVE (Q29) ; `rien` est une entree EXPLICITE, de ressource vide, tiree comme les autres. `poids` : poids relatifs par palier de profondeur, sans unite, sur les MEMES quatre paliers que `couches_profondeur` (Q30). Colonnes du §2.2 : surface = palier_1, profondeur moyenne = palier_2, profondeur extreme = palier_4 ; palier_3 est INTERPOLE (moyenne des colonnes voisines). Regle §2.4 validee au chargement : sur chaque palier, somme des poids > 0 et poids de `rien` strictement inferieur a la somme. Le tirage est reproductible : generateur dedie, ensemence par la graine de generation ET les coordonnees de la case. Valeurs d'exemple du §2.2, a regler au playtest 7.6 sans toucher au code. Story 3.7, arbitrage Q35 : chaque entree porte `rarete_haute` (booleen) ; seules les raretes hautes — relique rare et artefact legendaire — declenchent le retour « jackpot » du §2.4, et uniquement sur un drop TIRE, jamais sur une tuile de minerai (Q36).",
+  "monde": {
+    "largeur_tuiles": 100,
+    "hauteur_surface_tuiles": 10,
+    "profondeur_tuiles": 321,
+    "epaisseur_ceinture_tuiles": 1
+  },
+  "ancrages": {
+    "zone_surface_colonne_min": -8,
+    "zone_surface_colonne_max": 7,
+    "apparition_colonne": 0,
+    "anomalie_colonne": 23,
+    "anomalie_rangee": 305
+  },
+  "generation": {
+    "graine": 20260927
+  },
+  "strates": [
+    {
+      "profondeur_max_m": 25.0,
+      "hardness": 1
+    },
+    {
+      "profondeur_max_m": 120.0,
+      "hardness": 2
+    },
+    {
+      "profondeur_max_m": -1.0,
+      "hardness": 3
+    }
+  ],
+  "couches_profondeur": [
+    {
+      "id": "palier_1",
+      "profondeur_min_m": 0.0,
+      "profondeur_max_m": 50.0
+    },
+    {
+      "id": "palier_2",
+      "profondeur_min_m": 50.0,
+      "profondeur_max_m": 150.0
+    },
+    {
+      "id": "palier_3",
+      "profondeur_min_m": 150.0,
+      "profondeur_max_m": 300.0
+    },
+    {
+      "id": "palier_4",
+      "profondeur_min_m": 300.0,
+      "profondeur_max_m": -1.0
+    }
+  ],
+  "densites_minerai": {
+    "palier_1": {
+      "fer_industriel": 0.08,
+      "promethium_brut": 0.01,
+      "adamantium": 0.0,
+      "relique_xeno": 0.0
+    },
+    "palier_2": {
+      "fer_industriel": 0.07,
+      "promethium_brut": 0.03,
+      "adamantium": 0.008,
+      "relique_xeno": 0.0
+    },
+    "palier_3": {
+      "fer_industriel": 0.05,
+      "promethium_brut": 0.04,
+      "adamantium": 0.02,
+      "relique_xeno": 0.002
+    },
+    "palier_4": {
+      "fer_industriel": 0.03,
+      "promethium_brut": 0.04,
+      "adamantium": 0.035,
+      "relique_xeno": 0.008
+    }
+  },
+  "loot": {
+    "entrees": [
+      {
+        "id": "rien",
+        "resource_id": "",
+        "rarete_haute": false
+      },
+      {
+        "id": "minerai_commun",
+        "resource_id": "fer_industriel",
+        "rarete_haute": false
+      },
+      {
+        "id": "relique_mineure",
+        "resource_id": "promethium_brut",
+        "rarete_haute": false
+      },
+      {
+        "id": "relique_rare",
+        "resource_id": "adamantium",
+        "rarete_haute": true
+      },
+      {
+        "id": "artefact_legendaire",
+        "resource_id": "relique_xeno",
+        "rarete_haute": true
+      }
+    ],
+    "poids": {
+      "palier_1": {
+        "rien": 40.0,
+        "minerai_commun": 45.0,
+        "relique_mineure": 12.0,
+        "relique_rare": 2.8,
+        "artefact_legendaire": 0.2
+      },
+      "palier_2": {
+        "rien": 25.0,
+        "minerai_commun": 40.0,
+        "relique_mineure": 25.0,
+        "relique_rare": 9.0,
+        "artefact_legendaire": 1.0
+      },
+      "palier_3": {
+        "rien": 17.5,
+        "minerai_commun": 32.5,
+        "relique_mineure": 27.5,
+        "relique_rare": 17.0,
+        "artefact_legendaire": 5.5
+      },
+      "palier_4": {
+        "rien": 10.0,
+        "minerai_commun": 25.0,
+        "relique_mineure": 30.0,
+        "relique_rare": 25.0,
+        "artefact_legendaire": 10.0
+      }
+    }
+  }
+}

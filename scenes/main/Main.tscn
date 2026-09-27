@@ -9,7 +9,7 @@
 [node name="World" parent="." instance=ExtResource("1_world")]
 
 [node name="DrillRig" parent="." instance=ExtResource("2_drillrig")]
-position = Vector2(0, -16)
+terrain_path = NodePath("../World")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 script = ExtResource("3_camera")

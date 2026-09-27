@@ -105,6 +105,7 @@ Référence fonctionnelle : `cahier_des_charges_motherload_40k_godot.md`, **amen
 | TM-3.19 | **Feedback de drop rare** (règle de design §2.4) | Jouer jusqu'à obtenir un drop de rareté haute (relique rare ou artefact légendaire). Si la rareté ne sort pas naturellement en 10 min, forcer temporairement les poids en éditant `data/generation.json`, puis **restaurer le fichier** | Le drop rare déclenche un retour **visuel** (lumière/flash) **et** un retour **sonore distinct** de celui d'un minerai commun. Le retour reste perceptible **suffisamment longtemps** pour être remarqué sans être cherché (repère indicatif : ≥ 1,5 s). Un drop rare visuellement identique à un drop commun est un échec | M |
 | TM-3.20 | **Gradient de rareté par profondeur** (amendement §2.2) | À graine de campagne fixe, creuser 50 tuiles dans la couche de surface, puis 50 dans la couche la plus profonde accessible. Relever la répartition des raretés dans chaque échantillon | La proportion de raretés hautes **augmente** visiblement avec la profondeur et celle de « Rien » diminue, dans le sens de la table §2.2. Ce cas mesure une tendance, pas des pourcentages exacts : consigner les deux répartitions dans le rapport, elles alimentent l'équilibrage de la story `7.6` | M |
 | TM-3.21 `[REG]` | **Aucune ressource inactive dans le loot** (Q12) | Sur au moins 2 graines, creuser 100 tuiles réparties sur toutes les couches accessibles et relever l'identifiant de chaque ressource obtenue | Seules les ressources `actif_mvp: true` de `data/resources.json` apparaissent (au MVP : `fer_industriel` et `adamantium`). L'apparition d'une ressource inactive — `cuivre`, `promethium_brut`, `cristaux_plasma`, `relique_xeno` — est un échec bloquant. *Ce cas comble une contrainte Q12 qui, jusqu'au 2026-09-06, était annoncée sans être couverte* | B |
+| TM-3.22 `[REG]` | **Point d'apparition posé et intact** (story `3.3`, arbitrage `Q33`) | Lancer une **nouvelle partie** et **ne toucher à rien pendant 10 s**. Répéter sur **3 graines** différentes | La foreuse apparaît **posée sur le sol** de la zone de surface, **au même endroit** quelle que soit la graine ; aucune chute, aucune alerte sonore ; profondeur **0 m** et blindage **inchangé** (lisibles au HUD à partir de la phase 4). Le premier écran montre la foreuse et le sous-sol dessous, jamais un écran noir ni une chute | B |
 
 ---
 
@@ -211,6 +212,7 @@ Référence fonctionnelle : `cahier_des_charges_motherload_40k_godot.md`, **amen
 | Valeurs de départ de `GameState` lues à l'écran (carburant, blindage, crédits, soute, profondeur) | `TM-1.6` e-l | Variables **privées non exportées** : l'Inspecteur ne les affiche pas de façon garantie, et aucun artefact de debug ne peut être créé pour y remédier (`A5`) | **`TM-4.1`** (sprint 4, HUD) | `1.12` |
 | Déclenchement d'une action par appui, une seule fois | `TM-1.5` | Aucun code ne consomme les entrées avant la phase 2 | **Sprint 2** — identifiant conservé | `1.3` / **Q9** |
 | **Volet « action ponctuelle » de `TM-1.5`** : une action ponctuelle ne se redéclenche pas sous la répétition clavier (`echo`) | `TM-1.5` | La story `2.2` ne livre que du **déplacement continu** (`Input.is_action_pressed` / `get_axis`), par nature insensible à l'`echo`. **Aucune action ponctuelle n'existe encore** dans le jeu, et en créer une pour le test serait un artefact de debug (`A5`). Le volet « touches de déplacement reconnues, une fois par appui » reste, lui, jouable dès `2.2` | **Sprint 3**, avec `drill` (story `3.4`) — premier `_unhandled_input()` du projet | `2.2` |
+| **Volet « action ponctuelle » de `TM-1.5`** — *second transfert* | `TM-1.5` | La story `3.4` implémente `drill` en lecture **continue** (`Input.is_action_pressed`, appui maintenu conforme à `TM-3.1`) : le forage est, comme le déplacement, insensible à l'`echo`. **Aucune action ponctuelle n'existe toujours**, et en fabriquer une pour rendre le test jouable serait un artefact `A5`. Décision prise en Notes de `3.4`, **une bonne fois** : le volet part avec les premières actions **ponctuelles par nature** | **Phase 4**, avec `pause` / `toggle_inventory` — premier `_unhandled_input()` du projet | `3.4` |
 
 ## Traçabilité — amendement « gameplay addictif » et arbitrages du 2026-09-06
 
@@ -220,6 +222,7 @@ Référence fonctionnelle : `cahier_des_charges_motherload_40k_godot.md`, **amen
 | §2.4 · **règle de design** | Jamais 0 % de drop, même à la surface | **TM-3.18** |
 | §2.4 · **règle de design** | Feedback visuel et sonore fort et durable sur les raretés hautes | **TM-3.19** |
 | **Q12** *(contrainte jusque-là sans cas de test)* | Aucune ressource `actif_mvp: false` dans le loot | **TM-3.21** |
+| **Q33** — point d'apparition *(lacune signalée en `3.3`)* | Foreuse posée au sol et intacte au lancement, indépendamment de la graine | **TM-3.22** |
 | §3.2 – §3.3 · **Q18** | Progression infinie, aucun plafond dur, coût géométrique | **TM-5.10** |
 | §3.3 · **règle de design** | Prochain palier atteignable en 1 à 3 descentes | **TM-5.11**, TM-7.11 |
 | §3.3 · **règle de design** | Amélioration ressentie dès la descente suivante | **TM-5.12** |
@@ -242,4 +245,6 @@ Référence fonctionnelle : `cahier_des_charges_motherload_40k_godot.md`, **amen
 | **Q21** — non-couverture assumée | « Vitesse de forage » du §3.2 : `foret` reste une **puissance** au MVP | *aucun cas — non couvert, tracé au backlog, à rouvrir post-MVP* |
 | **Q22** — surcharge du sprint 6 acceptée | Aucun effet sur le plan de tests : la phase 6 conserve une seule gate et ses cas `TM-6.1` à `TM-6.10` | *sans objet* |
 
+> **Ajout du 2026-09-27 (story `3.11`, arbitrage `Q33`)** : `TM-3.22` prolonge la numérotation du sprint 3 ; aucun cas n'est renuméroté.
+>
 > **Aucun cas de test antérieur n'a été renuméroté** le 2026-09-06 : les identifiants ajoutés prolongent la numérotation de leur sprint (`TM-3.17` à `TM-3.21`, `TM-5.10` à `TM-5.12`, `TM-6.7` à `TM-6.10`, `TM-7.11` et `TM-7.12` pour la story `1.10` ; `TM-2.9`, `TM-2.10`, `TM-5.13` et `TM-5.14` pour la story `1.11`), conformément à la règle « ne pas renuméroter » de l'en-tête.
