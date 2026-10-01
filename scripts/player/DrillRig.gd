@@ -1,4 +1,5 @@
 extends CharacterBody2D
+class_name DrillRig
 
 ## Foreuse pilotable — story 2.2.
 ##
@@ -30,6 +31,9 @@ extends CharacterBody2D
 ## [br]— **Validation headless** : ce fichier référence les autoloads `GameData`
 ## et `GameState`. `--check-only` ne résout pas un identifiant d'autoload et
 ## signale un faux « Identifier not found » — exception bornée de la story `1.9`.
+## [br]— **Type nommé** (`class_name`, story 4.2) : le HUD reçoit la foreuse par
+## injection de scène (`Q38`) et s'abonne aux signaux de ses composants, qu'il
+## obtient par les accesseurs `get_*_system()` ci-dessous.
 
 # --- Actions de l'Input Map ---------------------------------------------------
 # Les noms des 12 actions du CDC (story 1.3). Ce sont des identifiants d'Input
@@ -51,6 +55,20 @@ const DRILL_FEEDBACK_SCENE: PackedScene = preload("res://scenes/world/DrillFeedb
 ## rédigé à la main ne porte pas la table `node_paths`. Vide, le forage reste
 ## désactivé et le signale.
 @export var terrain_path: NodePath
+
+# --- Sons d'alerte (story 4.2, arbitrage Q45) ---------------------------------
+# Un flux par alerte, joué par le **seul** lecteur `Audio/AlertAudio` dont on
+# change le flux : l'arbre de `DrillRig.tscn` reste figé à 11 nœuds (story 2.1,
+# `TM-2.11`). Les flux sont **renseignés dans la scène** et chargés avec elle
+# (`H6`) : aucun chemin de son dans ce script. Remplacer un son = remplacer le
+# fichier `assets/audio/sfx_*.wav` du même nom, sans toucher au code.
+
+@export var fuel_low_sound: AudioStream
+@export var fuel_depleted_sound: AudioStream
+@export var armor_low_sound: AudioStream
+@export var cargo_full_sound: AudioStream
+@export var drill_refused_sound: AudioStream
+@export var destruction_sound: AudioStream
 
 # --- Paramètres de physique ---------------------------------------------------
 # Relevés une seule fois depuis `GameData` : `_physics_process()` est un chemin
@@ -129,11 +147,44 @@ func _ready() -> void:
 	_armor_system.armor_low.connect(_on_armor_low)
 	_armor_system.destruction_started.connect(_on_destruction_started)
 	_armor_system.destruction_finished.connect(_on_destruction_finished)
+	_check_alert_sounds()
 	_setup_drilling()
 	_world_bounds = GameData.get_world_bounds()
 	_half_extents = _read_half_extents()
 	_place_at_spawn()
 	_publish_state()
+
+
+## Composants exposés au HUD (story 4.2) pour qu'il s'abonne à leurs signaux :
+## requête synchrone sur un type nommé, référence injectée par la scène — les
+## trois conditions de la précision `Q38` de `C3`. Aucune notification ne passe
+## par ces accesseurs.
+func get_fuel_system() -> FuelSystem:
+	return _fuel_system
+
+
+func get_armor_system() -> ArmorSystem:
+	return _armor_system
+
+
+func get_drill_system() -> MiningSystem:
+	return _drill_system
+
+
+## Un flux absent rendrait l'alerte **muette** sans erreur — `play()` sans flux
+## est un no-op silencieux (mesuré en story 2.3). On le dit donc au démarrage.
+func _check_alert_sounds() -> void:
+	var sounds: Dictionary[String, AudioStream] = {
+		"fuel_low_sound": fuel_low_sound,
+		"fuel_depleted_sound": fuel_depleted_sound,
+		"armor_low_sound": armor_low_sound,
+		"cargo_full_sound": cargo_full_sound,
+		"drill_refused_sound": drill_refused_sound,
+		"destruction_sound": destruction_sound,
+	}
+	for property: String in sounds:
+		if sounds[property] == null:
+			push_error("DrillRig — son d'alerte « %s » non renseigné dans la scène : alerte muette." % property)
 
 
 ## Pose la foreuse **sur le sol** du point d'apparition (story 3.3, critère 4) :
@@ -301,28 +352,29 @@ func _on_tile_drilled(_cell: Vector2i, resource_id: String) -> void:
 	cargo_system.on_tile_drilled(resource_id)
 
 
-## Alerte « soute pleine » (CDC « Direction sonore », `Q5`) : flux réel de
-## `AlertAudio`. Son affichage est livré par la story 4.2.
+## Alerte « soute pleine » (CDC « Direction sonore », `Q5`) : son propre. Son
+## affichage est porté par le HUD (story 4.2), abonné au même signal.
 func _on_cargo_full() -> void:
-	_alert_audio.play()
+	_play_alert(cargo_full_sound)
 
 
 ## Retour explicite d'un forage refusé (critère 5 de la story 3.4, `TM-3.5`) :
-## émis une fois par tuile visée, jamais à chaque frame. Le retour visuel et un
-## son dédié sont l'objet de la story 3.7.
+## émis une fois par tuile visée, jamais à chaque frame. Son court et sourd,
+## distinct des alertes ; le motif est affiché par le HUD (story 4.2, `E20`).
 func _on_drill_refused(_cell: Vector2i, _reason: MiningSystem.RefusalReason) -> void:
-	_alert_audio.play()
+	_play_alert(drill_refused_sound)
 
 
 ## Retours d'alerte. `AlertAudio` appartient à la foreuse, pas au composant :
-## `FuelSystem` signale, `DrillRig` sonne. C'est ce qui permettra au HUD de la
-## phase 4 de s'abonner aux mêmes signaux sans rien dupliquer.
+## `FuelSystem` signale, `DrillRig` sonne, le HUD affiche (story 4.2) — trois
+## abonnés distincts au même signal, rien de dupliqué. Chaque alerte a **son**
+## flux (`E21`, `Q45`) ; un seul lecteur, donc la plus récente l'emporte.
 func _on_fuel_low(_ratio: float) -> void:
-	_alert_audio.play()
+	_play_alert(fuel_low_sound)
 
 
 func _on_fuel_depleted() -> void:
-	_alert_audio.play()
+	_play_alert(fuel_depleted_sound)
 
 
 ## Le ravitaillement (phase 5) coupe une alerte encore en cours : le joueur ne
@@ -332,7 +384,7 @@ func _on_fuel_restored() -> void:
 
 
 func _on_armor_low(_ratio: float) -> void:
-	_alert_audio.play()
+	_play_alert(armor_low_sound)
 
 
 ## Entrée en destruction : les commandes cessent d'être lues et l'alerte sonne.
@@ -340,7 +392,7 @@ func _on_armor_low(_ratio: float) -> void:
 ## course comme si rien n'était arrivé.
 func _on_destruction_started() -> void:
 	velocity.x = 0.0
-	_alert_audio.play()
+	_play_alert(destruction_sound)
 
 
 ## Sortie de destruction : l'alerte se tait, le pilotage reprend du seul fait que
@@ -348,6 +400,13 @@ func _on_destruction_started() -> void:
 ## touché aucune donnée persistante.
 func _on_destruction_finished() -> void:
 	_alert_audio.stop()
+
+
+## Change le flux du lecteur d'alerte puis le joue : un son interrompt le
+## précédent au lieu de s'y superposer.
+func _play_alert(sound: AudioStream) -> void:
+	_alert_audio.stream = sound
+	_alert_audio.play()
 
 
 ## Publication de l'état vers `GameState` (`C3`) : aucun nœud n'est appelé

@@ -45,6 +45,7 @@ const ROOT_ARMOR: String = "blindage"
 const ROOT_CAMERA: String = "camera"
 const ROOT_DRILLING: String = "forage"
 const ROOT_FEEDBACK: String = "retour"
+const ROOT_MESSAGES: String = "messages"
 ## `monde` vit désormais dans `data/generation.json` : la story 3.2 l'a migré
 ## depuis `data/drill.json`, où la story 2.4 l'hébergeait à titre temporaire.
 const ROOT_WORLD: String = "monde"
@@ -114,6 +115,9 @@ const KEY_DRILL_BASE_DURATION: String = "duree_base_s"
 const KEY_DRILL_DURATION_PER_HARDNESS: String = "duree_par_hardness_s"
 ## Durée de visibilité du retour d'une rareté haute (story 3.7, §2.4).
 const KEY_JACKPOT_DURATION: String = "duree_jackpot_s"
+# Bloc `messages` (story 4.2) : messages transitoires du HUD.
+const KEY_MESSAGE_DURATION: String = "duree_message_s"
+const KEY_MESSAGE_MAX: String = "messages_max"
 
 # Dégâts d'impact (story 2.5, arbitrage Q20). La **capacité** de blindage n'est
 # pas ici : c'est la statistique `blindage_max` de l'amélioration `blindage` de
@@ -258,6 +262,15 @@ const FEEDBACK_SCHEMA: Dictionary = {
 	KEY_JACKPOT_DURATION: FieldKind.FLOAT,
 }
 
+## Messages transitoires de bord (story 4.2). Durée strictement positive — un
+## message de durée nulle serait une perte silencieuse (`G10`) — et nombre de
+## messages simultanés **entier** d'au moins 1. Lu en `FLOAT` comme tout nombre
+## JSON, l'entier est vérifié par les bornes.
+const MESSAGES_SCHEMA: Dictionary = {
+	KEY_MESSAGE_DURATION: FieldKind.FLOAT,
+	KEY_MESSAGE_MAX: FieldKind.FLOAT,
+}
+
 ## Dégâts d'impact. Les quatre champs sont strictement positifs, et le **seuil
 ## d'impact non nul** est une exigence d'audit (`M8`) autant qu'une règle de
 ## design : à seuil nul, le moindre déplacement grignoterait le blindage. Le
@@ -350,6 +363,9 @@ var _camera: Dictionary[String, float] = {}
 var _drilling: Dictionary[String, float] = {}
 ## Retour audiovisuel. Vide si rejeté : aucun retour de rareté n'est affiché.
 var _feedback: Dictionary[String, float] = {}
+## Messages transitoires. Vide si rejeté : le HUD n'affiche alors aucun message
+## transitoire et le signale, plutôt que d'inventer une durée.
+var _messages: Dictionary[String, float] = {}
 ## Dimensions de la carte en tuiles, graine, strates, paliers de profondeur et
 ## densités de minerai. Vides si rejetés : le générateur refuse alors de produire
 ## un terrain, plutôt que d'en produire un sur des valeurs inventées.
@@ -488,6 +504,7 @@ func _load_drill() -> void:
 	_load_drill_block(root, ROOT_CAMERA, CAMERA_SCHEMA, _camera)
 	_load_drill_block(root, ROOT_DRILLING, DRILLING_SCHEMA, _drilling)
 	_load_drill_block(root, ROOT_FEEDBACK, FEEDBACK_SCHEMA, _feedback)
+	_load_drill_block(root, ROOT_MESSAGES, MESSAGES_SCHEMA, _messages)
 
 
 ## Le dictionnaire de destination est passé par référence : c'est ce qui permet
@@ -523,6 +540,8 @@ func _accept_drill_bounds(block: Dictionary, root_key: String, context: String) 
 			return _accept_drilling_bounds(block, context)
 		ROOT_FEEDBACK:
 			return _accept_feedback_bounds(block, context)
+		ROOT_MESSAGES:
+			return _accept_messages_bounds(block, context)
 	# Aucun contrôle de bornes déclaré pour ce bloc. Le rejeter en silence
 	# rendrait le défaut indiagnosticable : un bloc ajouté sans sa validation
 	# disparaîtrait sans un mot, alors que tout le chargeur repose sur l'échec
@@ -912,6 +931,17 @@ func _accept_feedback_bounds(block: Dictionary, context: String) -> bool:
 	return true
 
 
+func _accept_messages_bounds(block: Dictionary, context: String) -> bool:
+	if block[KEY_MESSAGE_DURATION] <= 0.0:
+		_report("%s : champ « %s » doit être strictement positif (lu : %s), bloc rejeté." % [context, KEY_MESSAGE_DURATION, block[KEY_MESSAGE_DURATION]])
+		return false
+	var count: float = block[KEY_MESSAGE_MAX]
+	if count < 1.0 or not is_equal_approx(count, roundf(count)):
+		_report("%s : champ « %s » doit être un entier supérieur ou égal à 1 (lu : %s), bloc rejeté." % [context, KEY_MESSAGE_MAX, count])
+		return false
+	return true
+
+
 func _accept_drilling_bounds(block: Dictionary, context: String) -> bool:
 	if block[KEY_DRILL_BASE_DURATION] < 0.0:
 		_report("%s : champ « %s » ne peut pas être négatif (lu : %s), bloc rejeté." % [context, KEY_DRILL_BASE_DURATION, block[KEY_DRILL_BASE_DURATION]])
@@ -1101,7 +1131,7 @@ func get_errors() -> PackedStringArray:
 
 
 func get_load_summary() -> String:
-	return "GameData — ressources : %d (%d actives MVP) · améliorations : %d (%d actives MVP) · événements : %d (%d actifs MVP) · physique foreuse : %d champs · carburant : %d champs · blindage : %d · caméra : %d · forage : %d · retour : %d · monde : %d tuiles · ancrages : %d · strates : %d · paliers : %d · loot : %d entrées · erreurs : %d" % [
+	return "GameData — ressources : %d (%d actives MVP) · améliorations : %d (%d actives MVP) · événements : %d (%d actifs MVP) · physique foreuse : %d champs · carburant : %d champs · blindage : %d · caméra : %d · forage : %d · retour : %d · messages : %d · monde : %d tuiles · ancrages : %d · strates : %d · paliers : %d · loot : %d entrées · erreurs : %d" % [
 		_resource_ids.size(), get_mvp_resource_ids().size(),
 		_upgrade_ids.size(), get_mvp_upgrade_ids().size(),
 		_event_ids.size(), get_mvp_event_ids().size(),
@@ -1111,6 +1141,7 @@ func get_load_summary() -> String:
 		_camera.size(),
 		_drilling.size(),
 		_feedback.size(),
+		_messages.size(),
 		_map.size(),
 		_anchors.size(),
 		_strata.size(),
@@ -1453,6 +1484,26 @@ func get_jackpot_duration() -> float:
 		push_error("GameData — durée du retour de rareté indisponible (voir %s)." % DRILL_PATH)
 		return 0.0
 	return _feedback[KEY_JACKPOT_DURATION]
+
+
+func has_message_settings() -> bool:
+	return _messages.size() == MESSAGES_SCHEMA.size()
+
+
+## Durée, en secondes, d'affichage d'un message transitoire de bord (story 4.2).
+func get_message_duration() -> float:
+	if not has_message_settings():
+		push_error("GameData — durée des messages de bord indisponible (voir %s)." % DRILL_PATH)
+		return 0.0
+	return _messages[KEY_MESSAGE_DURATION]
+
+
+## Nombre de messages transitoires affichés ensemble (story 4.2).
+func get_message_max() -> int:
+	if not has_message_settings():
+		push_error("GameData — nombre de messages de bord indisponible (voir %s)." % DRILL_PATH)
+		return 0
+	return roundi(_messages[KEY_MESSAGE_MAX])
 
 
 ## Durée, en secondes, du forage d'une tuile de cette dureté.

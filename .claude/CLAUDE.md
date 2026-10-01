@@ -56,7 +56,7 @@ Chaque fichier doit comporter au moins :
 - Ne **pas** commiter la phase tant que les stories dev **et** la story d'audit ne sont pas **Terminée**. L'audit **Autorisé** suffit désormais à autoriser le commit.
 - Les critères **[H]** (rendu, ressenti de contrôle, équilibrage, audio, ergonomie) ne sont **jamais cochés par un agent** : ils restent **en attente** et sont tous vérifiés à la recette `7.8`. Chaque story liste ce qui reste à valider visuellement.
 - Les gates de tests humains des sprints 2 à 6 (`2.7`, `3.9`, `4.6`, `5.9`, `6.10`) sont au statut **Reportée** vers `7.8` : fichiers conservés, aucune renumérotation.
-- Exemples réels du projet : `0.4` audit → `0.5` revue **annulée** (`0.10`) · `1.7` audit → `1.8` tests **close sans exécution** · `2.6` audit, `2.7` **reportée** (`2.8`). Les numéros des phases ≥ 3 sont **prévisionnels** et se déplacent à chaque insertion de story : ne les recopie pas ici, **les numéros exacts font foi dans `stories/BACKLOG.md`**, tableau de la phase concernée.
+- Exemples réels du projet : `0.4` audit → `0.5` revue **annulée** (`0.10`) · `1.7` audit → `1.8` tests **close sans exécution** · `2.6` audit, `2.7` **reportée** (`2.8`). Les numéros des phases ≥ 5 sont **prévisionnels** et se déplacent à chaque insertion de story : ne les recopie pas ici, **les numéros exacts font foi dans `stories/BACKLOG.md`**, tableau de la phase concernée.
 
 ## Commits Git (obligatoire à la fin de chaque phase)
 

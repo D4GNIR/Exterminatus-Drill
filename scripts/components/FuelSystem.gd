@@ -30,6 +30,10 @@ signal fuel_restored()
 ## Émis **une fois** au franchissement descendant du seuil d'alerte, avec le
 ## ratio de réservoir restant. Réarmé dès que le niveau repasse au-dessus.
 signal fuel_low(ratio: float)
+## Émis **une fois** quand le niveau repasse au-dessus du seuil d'alerte : fin de
+## l'état « carburant bas » (story 4.2, critère 9). Le seuil reste ici, jamais
+## recopié par l'interface qui affiche l'alerte.
+signal fuel_low_cleared()
 
 var _thrust_consumption: float = 0.0
 var _idle_consumption: float = 0.0
@@ -79,6 +83,13 @@ func has_fuel() -> bool:
 	return not _depleted
 
 
+## Le réservoir est-il sous le seuil d'alerte ? Lecture de l'état **constaté**,
+## pour qu'un abonné arrivé après la dernière transition (le HUD, story 4.2)
+## affiche l'alerte en cours sans connaître le seuil.
+func is_fuel_low() -> bool:
+	return _low_alert_sent
+
+
 ## Consommation d'une frame de poussée, appelée par `DrillRig` **uniquement
 ## quand les propulseurs poussent réellement**. En panne sèche, il n'y a pas de
 ## poussée, donc rien à consommer : la garde évite de compter une dépense pour
@@ -126,7 +137,9 @@ func _update_depleted(is_empty: bool) -> void:
 
 func _update_low_alert(ratio: float) -> void:
 	if ratio > _low_ratio:
-		_low_alert_sent = false
+		if _low_alert_sent:
+			_low_alert_sent = false
+			fuel_low_cleared.emit()
 		return
 	if _low_alert_sent:
 		return

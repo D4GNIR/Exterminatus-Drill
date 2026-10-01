@@ -1,6 +1,8 @@
 # Avancement fonctionnel — HISTORIQUE (archive figée)
 
-> 🗄️ **Document historique, figé le 2026-09-27, hors périmètre de `I7` ; ne pas y ajouter de contenu courant.**
+> 🗄️ **Document historique, figé le 2026-09-27 pour son contenu existant, hors périmètre de `I7` ; ne pas y ajouter de contenu courant.**
+>
+> 📥 **Règle d'alimentation** *(arbitrage utilisateur **`Q49`** du 2026-10-01, story `4.8`)* : le texte déjà présent ici n'est **jamais modifié**. Le fichier reçoit, **à chaque clôture de phase**, une **section datée ajoutée en fin de fichier**, qui porte la **table de détail de la phase close**, transférée depuis `stories/AVANCEMENT.md` à l'identique, hormis son titre. Rien d'autre n'y est ajouté. Première application : section « Transfert du 2026-10-01 — clôture de la phase 3 » (story `4.7`), **conservée** par `Q49`.
 >
 > Créé par la story `3.16` (arbitrage utilisateur **`Q43`** du 2026-09-27). Ce fichier reçoit **par transfert, sans suppression** le texte de `stories/AVANCEMENT.md` tel qu'il était au gel, **reproduit à l'identique** ci-dessous, avec ses numéros de section d'alors (§1 à §6). On y trouve : les contextes précédents et encadrés d'en-tête, les encadrés de révision et corrections de compteur passées, les tables de détail des phases closes (§3.1 à §3.3), l'état de la phase 3 au gel (§3.4), les écarts, risques et recommandations **résolus ou sans objet**, et les énoncés d'origine barrés. Les passages encore actifs au gel y figurent aussi, **dans leur rédaction d'alors** ; leur version courante, réécrite sans compteur, est dans `stories/AVANCEMENT.md`.
 >
@@ -377,3 +379,33 @@ Les 8 points de « MVP jouable » et les 7 « Critères d'acceptation MVP » son
 42. 🟡 **À la clôture de la phase 3 — réexaminer la recommandation 17.** Elle proposait une passe humaine unique intermédiaire à la clôture de la phase 4. Après la phase 3, l'argument change de poids : le jeu sera **jouable de bout en bout au sol** (terrain, forage, collecte, loot) sans que personne l'ait vu, et la recette `7.8` héritera de **trois** sprints de gameplay non constaté et de **21 critères `[H]`** *(23 annoncés avant le recomptage de `3.15`)*. Rappel : `Q22` fixe déjà un point de réexamen à la clôture de la phase 5 pour la surcharge du sprint 6 — les deux réexamens peuvent être instruits ensemble. **Décision utilisateur.**
 
 25. **En post-MVP** : rouvrir les deux non-couvertures assumées du §3.2 tracées en écart **E12** — « vitesse de forage » (le MVP conserve une puissance de foret) et « profondeur max sûre ». Elles sont visibles dans les tables de traçabilité de `stories/BACKLOG.md` et de `qa/plan-tests-manuels.md`. **Aucun agent ne doit les combler au détour d'une story du MVP.**
+
+---
+
+## Transfert du 2026-10-01 — clôture de la phase 3 *[transfert 4.7]*
+
+> Section ajoutée **par transfert**, en application de la règle 3 de l'arbitrage **`Q43`** (« les tables de détail des phases closes vont dans l'archive »), par la story `4.7 - Ouverture de la phase 4 et cloture du suivi de la phase 3`. Elle ne contient **aucun contenu courant** : c'est l'ancien §3.1 de `stories/AVANCEMENT.md`, **reproduit à l'identique** hormis son titre, tel qu'il était à la clôture de la phase 3 — gate `3.8` **Autorisé**, commit **`cc471c0`** du 2026-09-27, poussé. Le reste de ce document demeure figé au 2026-09-27.
+
+#### Table de détail de la phase 3 (état à la clôture)
+
+Numérotation **ferme**. Le détail des vérifications et les points de vigilance de chaque story sont dans ses propres Notes ; l'état de ce tableau à la date du gel est archivé.
+
+| Story | Statut | Objet · état |
+|---|---|---|
+| `3.1 - TileSet et Custom Data Layers` | ✅ Terminée | Six Custom Data Layers (`E1 [B]`), `TileSet` en sous-ressource de `World.tscn` (`Q27`), atlas placeholder `tile_atlas_32x32.png`, tuile 32 × 32. |
+| `3.2 - Generateur de terrain semi-procedural` | ✅ Terminée | Graine explicite et journalisée (`K1`, `K2`), ceinture indestructible (`K4`), `data/generation.json`, bloc `monde` migré, palier « 300 m+ » atteignable (`E15` refermé). |
+| `3.3 - Ancrages deterministes et point d'apparition` | ✅ Terminée | Ancrages hors du flux aléatoire (`K3`) ; foreuse posée au sol au lancement, blindage intact. |
+| `3.4 - MiningSystem et regles de forage` | ✅ Terminée | `G1`, `G2` et `G4` vérifiés par comportement ; coût en carburant et puissance contre `hardness` ; empreinte 28 × 28 (`Q32`) ; mur des 120 m conservé (`Q31`). |
+| `3.5 - Collecte des minerais et soute limitee` | ✅ Terminée | `Q5` : alerte avant la perte (`G9`), perte observable (`G10`) ; volet visuel transféré à `4.2`. |
+| `3.6 - Table de loot ponderee par couche` | ✅ Terminée | `K7` à `K10` : table en données, tirage par case ensemencé, jamais de drop à zéro, aucune ressource inactive. |
+| `3.7 - Retour de forage et feedback des drops rares` | ✅ Terminée | Fissures, débris, son en boucle, jackpot sur drop tiré rare ou légendaire (`Q34`–`Q36`). **Objet non vérifié à l'écran** : critères `[H]` au registre §3.2. |
+| `3.8 - Audit qualite — Sprint 3` | ✅ Terminée | Gate unique : **Autorisé** à l'itération 5 (agent principal, `Q44`) ; itérations 1 à 4 **KO** (documentation), corrigées par `3.13` à `3.16`. |
+| `3.9 - Tests manuels humains — Sprint 3` | ⏭ Reportée vers `7.8` | Cas `TM-3.1` à `TM-3.22` et confirmation des critères `[H]` de `3.1` à `3.7` (registre §3.2), prérequis `P4` et `P5`. |
+| `3.10 - Arbitrages Q27 a Q30 d'ouverture de phase 3` | ✅ Terminée | `TileSet` en sous-ressource · exclusivité tuile/loot · quatre ressources actives · un seul découpage de profondeur. |
+| `3.11 - Arbitrages Q31 a Q33 apres le forage` | ✅ Terminée | Mur des 120 m conservé · empreinte 28 × 28 · cas `TM-3.22`. |
+| `3.12 - Arbitrages Q34 a Q37 avant le feedback` | ✅ Terminée | Sons `.wav` générés · raretés hautes rare + légendaire · drops tirés seulement · `valeur_credits` prix par tuile. |
+| `3.13 - Corrections issues de l'audit 3.8` | ✅ Terminée | Itération 1 : `C3` précisé (`Q38`), `I7`, `B5`, `B6`, `B7`. |
+| `3.14 - Correction du compteur de phase 3 du backlog` | ✅ Terminée | Itération 2 : vue d'ensemble de `BACKLOG.md` (`I7`). |
+| `3.15 - Corrections issues de l'iteration 3 de l'audit 3.8` | ✅ Terminée | Itération 3 : source unique (`Q39`), convention (`Q40`), registre `[H]` (`Q41`), synthèses (`Q42`). |
+| `3.16 - Corrections issues de l'iteration 4 de l'audit 3.8` | ✅ Terminée | Itération 4 : archivage de l'historique (`Q43`), compteurs aux seuls emplacements de référence, note `I7` précisée. Documentaire. |
+| `3.17 - Corrections mineures issues de l'iteration 5 de l'audit 3.8` | ✅ Terminée | Deux KO mineurs `I4` levés : ligne « Dépôt Git » (état réel relevé par commande), recommandations 10 et 23 rendues autoportantes. Documentaire. |

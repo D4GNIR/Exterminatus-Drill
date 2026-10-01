@@ -37,6 +37,10 @@ class_name CargoSystem
 ## La soute ne peut plus accueillir de minerai (ou pas celui qu'on s'apprête à
 ## forer). Émis **une fois**, réarmé quand de la place se libère (vente, phase 5).
 signal cargo_full()
+## Fin de l'état « soute pleine » : un minerai peut de nouveau entrer (vente,
+## amélioration de soute). Émis **une fois**, au réarmement de `cargo_full`
+## (story 4.2, critère 9) : la règle de saturation reste ici, jamais dans l'UI.
+signal cargo_full_cleared()
 ## Un minerai a été perdu faute de place (`Q5`) : `units` unités de `resource_id`,
 ## `total_lost` le cumul de la partie.
 signal ore_lost(resource_id: String, units: int, total_lost: int)
@@ -68,6 +72,12 @@ func setup() -> bool:
 ## Minerai perdu depuis le début de la partie, en unités de soute (`G10`).
 func get_lost_units() -> int:
 	return _lost_units
+
+
+## L'alerte « soute pleine » est-elle en cours ? État **constaté**, lu par le HUD
+## (story 4.2) à son initialisation.
+func is_full_alert_active() -> bool:
+	return _full_alert_sent
 
 
 ## (b) — Un forage commence. Si la tuile porte un minerai qui ne rentrera pas,
@@ -112,5 +122,6 @@ func _alert_full() -> void:
 ## Réarmement : dès qu'un minerai peut de nouveau entrer (vente, amélioration de
 ## soute), la prochaine saturation sera de nouveau annoncée.
 func _on_cargo_changed(used: int, capacity: int) -> void:
-	if capacity - used >= _smallest_mass:
+	if capacity - used >= _smallest_mass and _full_alert_sent:
 		_full_alert_sent = false
+		cargo_full_cleared.emit()

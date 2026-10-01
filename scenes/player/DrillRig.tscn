@@ -1,10 +1,15 @@
-[gd_scene load_steps=10 format=3 uid="uid://c8kxr2vqn7ptd"]
+[gd_scene load_steps=15 format=3 uid="uid://c8kxr2vqn7ptd"]
 
 [ext_resource type="Script" uid="uid://3eq5ce740cxo" path="res://scripts/player/DrillRig.gd" id="1_drillrig"]
 [ext_resource type="Script" uid="uid://e0sgaxbmhkat" path="res://scripts/components/FuelSystem.gd" id="2_fuelsystem"]
 [ext_resource type="Script" uid="uid://b1ladwqu5fv4k" path="res://scripts/components/ArmorSystem.gd" id="3_armorsystem"]
 [ext_resource type="Script" path="res://scripts/systems/MiningSystem.gd" id="4_miningsystem"]
 [ext_resource type="AudioStream" uid="uid://dpq1ucx4jhrhf" path="res://assets/audio/sfx_drill_loop.wav" id="5_drillloop"]
+[ext_resource type="AudioStream" uid="uid://dxgyfxjlcgo6i" path="res://assets/audio/sfx_alert_fuel_low.wav" id="6_fuellow"]
+[ext_resource type="AudioStream" uid="uid://dqehgb5o106mt" path="res://assets/audio/sfx_alert_fuel_depleted.wav" id="7_fueldepleted"]
+[ext_resource type="AudioStream" uid="uid://bt1o5thjiccjq" path="res://assets/audio/sfx_alert_armor_low.wav" id="8_armorlow"]
+[ext_resource type="AudioStream" uid="uid://d378cnr0m7crf" path="res://assets/audio/sfx_alert_cargo_full.wav" id="9_cargofull"]
+[ext_resource type="AudioStream" uid="uid://bg032msrd857r" path="res://assets/audio/sfx_drill_refused.wav" id="10_drillrefused"]
 
 [sub_resource type="Gradient" id="Gradient_rig"]
 offsets = PackedFloat32Array(0, 1)
@@ -27,6 +32,12 @@ mix_rate = 6000
 
 [node name="DrillRig" type="CharacterBody2D"]
 script = ExtResource("1_drillrig")
+fuel_low_sound = ExtResource("6_fuellow")
+fuel_depleted_sound = ExtResource("7_fueldepleted")
+armor_low_sound = ExtResource("8_armorlow")
+cargo_full_sound = ExtResource("9_cargofull")
+drill_refused_sound = ExtResource("10_drillrefused")
+destruction_sound = SubResource("AudioStreamWAV_alert")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = SubResource("GradientTexture2D_rig")

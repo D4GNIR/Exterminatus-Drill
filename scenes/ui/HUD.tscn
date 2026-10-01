@@ -1,0 +1,260 @@
+[gd_scene load_steps=4 format=3 uid="uid://x6lttpetywcn"]
+
+[ext_resource type="Theme" uid="uid://cof0fr65aer6v" path="res://scenes/ui/UiTheme.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://tyis02qk80p7" path="res://scripts/ui/HUD.gd" id="2_hud"]
+[ext_resource type="Script" uid="uid://b55jnban8ijqq" path="res://scripts/ui/AlertPanel.gd" id="3_alertpanel"]
+
+[node name="HUD" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_hud")
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 376.0
+offset_bottom = 176.0
+mouse_filter = 2
+
+[node name="Rows" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="FuelRow" type="HBoxContainer" parent="Panel/Rows"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="FuelCaption" type="Label" parent="Panel/Rows/FuelRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+text = "CARBURANT"
+
+[node name="FuelBar" type="ProgressBar" parent="Panel/Rows/FuelRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 14)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 2
+max_value = 1.0
+step = 0.0
+show_percentage = false
+
+[node name="FuelValue" type="Label" parent="Panel/Rows/FuelRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="ArmorRow" type="HBoxContainer" parent="Panel/Rows"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ArmorCaption" type="Label" parent="Panel/Rows/ArmorRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+text = "BLINDAGE"
+
+[node name="ArmorBar" type="ProgressBar" parent="Panel/Rows/ArmorRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 14)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 2
+theme_type_variation = &"ArmorBar"
+max_value = 1.0
+step = 0.0
+show_percentage = false
+
+[node name="ArmorValue" type="Label" parent="Panel/Rows/ArmorRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="CargoRow" type="HBoxContainer" parent="Panel/Rows"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="CargoCaption" type="Label" parent="Panel/Rows/CargoRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+text = "SOUTE"
+
+[node name="CargoBar" type="ProgressBar" parent="Panel/Rows/CargoRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 14)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 2
+theme_type_variation = &"CargoBar"
+max_value = 1.0
+step = 0.0
+show_percentage = false
+
+[node name="CargoValue" type="Label" parent="Panel/Rows/CargoRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="CreditsRow" type="HBoxContainer" parent="Panel/Rows"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="CreditsCaption" type="Label" parent="Panel/Rows/CreditsRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+text = "CRÉDITS"
+
+[node name="CreditsValue" type="Label" parent="Panel/Rows/CreditsRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 2
+
+[node name="DepthRow" type="HBoxContainer" parent="Panel/Rows"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="DepthCaption" type="Label" parent="Panel/Rows/DepthRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+text = "PROFONDEUR"
+
+[node name="DepthValue" type="Label" parent="Panel/Rows/DepthRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 2
+
+[node name="AlertSlot" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -240.0
+offset_top = 16.0
+offset_right = 240.0
+offset_bottom = 16.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("3_alertpanel")
+
+[node name="FuelDepletedAlert" type="PanelContainer" parent="AlertSlot"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"AlertBannerCritical"
+
+[node name="Row" type="HBoxContainer" parent="AlertSlot/FuelDepletedAlert"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Tag" type="Label" parent="AlertSlot/FuelDepletedAlert/Row"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+theme_type_variation = &"AlertCriticalLabel"
+text = "CARBURANT"
+
+[node name="Text" type="Label" parent="AlertSlot/FuelDepletedAlert/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"AlertCriticalLabel"
+text = "PANNE SÈCHE : MOTEURS COUPÉS"
+
+[node name="FuelLowAlert" type="PanelContainer" parent="AlertSlot"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"AlertBanner"
+
+[node name="Row" type="HBoxContainer" parent="AlertSlot/FuelLowAlert"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Tag" type="Label" parent="AlertSlot/FuelLowAlert/Row"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+theme_type_variation = &"AlertTagFuel"
+text = "CARBURANT"
+
+[node name="Text" type="Label" parent="AlertSlot/FuelLowAlert/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"AlertLabel"
+text = "NIVEAU BAS"
+
+[node name="ArmorLowAlert" type="PanelContainer" parent="AlertSlot"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"AlertBanner"
+
+[node name="Row" type="HBoxContainer" parent="AlertSlot/ArmorLowAlert"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Tag" type="Label" parent="AlertSlot/ArmorLowAlert/Row"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+theme_type_variation = &"AlertTagArmor"
+text = "BLINDAGE"
+
+[node name="Text" type="Label" parent="AlertSlot/ArmorLowAlert/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"AlertLabel"
+text = "INTÉGRITÉ FAIBLE"
+
+[node name="CargoFullAlert" type="PanelContainer" parent="AlertSlot"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"AlertBanner"
+
+[node name="Row" type="HBoxContainer" parent="AlertSlot/CargoFullAlert"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Tag" type="Label" parent="AlertSlot/CargoFullAlert/Row"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+theme_type_variation = &"AlertTagCargo"
+text = "SOUTE"
+
+[node name="Text" type="Label" parent="AlertSlot/CargoFullAlert/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"AlertLabel"
+text = "PLEINE : PLUS DE COLLECTE"
+
+[node name="LossCounter" type="Label" parent="AlertSlot"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_type_variation = &"MessageLossLabel"
+horizontal_alignment = 1
+
+[node name="Messages" type="VBoxContainer" parent="AlertSlot"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2

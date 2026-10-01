@@ -27,6 +27,9 @@ class_name ArmorSystem
 ## Émis **une fois** au franchissement descendant du seuil d'alerte, réarmé dès
 ## que le blindage repasse au-dessus.
 signal armor_low(ratio: float)
+## Émis **une fois** quand le blindage repasse au-dessus du seuil d'alerte : fin
+## de l'état « blindage faible » (story 4.2, critère 9). Le seuil reste ici.
+signal armor_low_cleared()
 ## Émis à l'entrée dans l'état « foreuse détruite » : blindage nul.
 signal destruction_started()
 ## Émis à la sortie de cet état, la foreuse redevenant pilotable.
@@ -93,6 +96,12 @@ func can_act() -> bool:
 	return not _destroyed
 
 
+## Le blindage est-il sous le seuil d'alerte ? État **constaté**, lu par le HUD
+## (story 4.2) à son initialisation, sans qu'il connaisse le seuil.
+func is_armor_low() -> bool:
+	return _low_alert_sent
+
+
 ## Unique point d'évaluation des transitions : il vaut pour un impact comme pour
 ## une réparation en surface (phase 5), sans que ce composant ait à savoir qui a
 ## modifié le blindage.
@@ -107,7 +116,9 @@ func _on_armor_changed(current: float, maximum: float) -> void:
 
 func _update_low_alert(ratio: float) -> void:
 	if ratio > _low_ratio:
-		_low_alert_sent = false
+		if _low_alert_sent:
+			_low_alert_sent = false
+			armor_low_cleared.emit()
 		return
 	if _low_alert_sent:
 		return

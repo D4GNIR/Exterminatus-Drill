@@ -1,0 +1,76 @@
+[gd_scene load_steps=3 format=3 uid="uid://cdi2uw2fc646f"]
+
+[ext_resource type="Theme" uid="uid://cof0fr65aer6v" path="res://scenes/ui/UiTheme.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://bfbuj6nnrt8as" path="res://scripts/ui/Inventory.gd" id="2_inventory"]
+
+[node name="Inventory" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_inventory")
+
+[node name="Backdrop" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"PauseBackdrop"
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Frame" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 2
+
+[node name="Rows" type="VBoxContainer" parent="Center/Frame"]
+layout_mode = 2
+theme_type_variation = &"PauseRows"
+
+[node name="Title" type="Label" parent="Center/Frame/Rows"]
+layout_mode = 2
+theme_type_variation = &"PauseTitle"
+text = "SOUTE"
+horizontal_alignment = 1
+
+[node name="LoadRow" type="HBoxContainer" parent="Center/Frame/Rows"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="LoadCaption" type="Label" parent="Center/Frame/Rows/LoadRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"HudCaption"
+text = "CHARGE"
+
+[node name="LoadValue" type="Label" parent="Center/Frame/Rows/LoadRow"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="EmptyLabel" type="Label" parent="Center/Frame/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+text = "Soute vide : aucun minerai à bord."
+horizontal_alignment = 1
+
+[node name="Contents" type="GridContainer" parent="Center/Frame/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"InventoryGrid"
+columns = 2
