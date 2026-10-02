@@ -4,14 +4,29 @@ class_name ArmorSystem
 ## Composant `ArmorSystem` — encaissement des dégâts (story 2.5, arbitrage Q20).
 ##
 ## **Seul point d'entrée de dégâts du jeu** (point d'audit `M1`) : aucun autre
-## nœud ne mute le blindage de `GameState`. Les menaces de la phase 6 (§4.2 de
+## nœud ne mute le blindage de `GameState`. La **réparation** payée à la station
+## (story 5.3) passe aussi par ce composant (`repair()`) : tous les écrivains du
+## blindage restent ici, et le contrôle `M1` reste littéral. Les menaces de la phase 6 (§4.2 de
 ## l'amendement) passeront par ce même composant, avec leurs propres sources —
 ## elles s'**ajoutent** aux dégâts d'impact, elles ne les remplacent pas.
 ##
 ## Contraintes de conception, opposables à l'audit :
 ## [br]— **La capacité de blindage n'est pas ici** : c'est la statistique
-## `blindage_max` de l'amélioration `blindage` (`data/upgrades.json`), qui
-## deviendra achetable en phase 5 (Q21). Ce composant ne la redéclare pas.
+## `blindage_max` de l'amélioration `blindage` (`data/upgrades.json`), active
+## au MVP depuis la story 5.7 (`Q21`). Ce composant ne la redéclare pas : il la
+## lit dans `GameState` (maximum de `armor_changed`), si bien que l'alerte se
+## recalcule sur le nouveau maximum dès qu'il change. **Application de l'achat
+## (story 5.5)** : il écoute `GameState.upgrade_level_changed` et porte ce
+## maximum à la valeur du nouveau niveau (`GameData.get_upgrade_value()`), à la
+## même image. **L'achat ne répare pas** : le blindage courant n'est jamais
+## modifié par un achat (`GameState.set_armor_max()` ne le borne qu'à la baisse) ;
+## la réparation reste une dépense de la station (`repair()`).
+## [br]— **L'amélioration ne réduit pas les dégâts** (`Q60` (a), écart `E24` à
+## la lettre du §3.2 de l'amendement, décidé par l'utilisateur) : un choc coûte
+## le même nombre de points quel que soit le niveau de `blindage` ; seule la
+## part de jauge entamée diminue. N'ajouter **aucun** coefficient de réduction.
+## Le niveau d'amélioration n'est lu **que** pour fixer le maximum
+## (`_apply_capacity()`), jamais par `apply_impact()`.
 ## [br]— **Aucune valeur de gameplay ici** (`D1`, `M8`) : seuil, coût par px/s,
 ## seuil d'alerte et durée de transition viennent de `data/drill.json`.
 ## [br]— **Le seuil d'impact n'est jamais nul** (`M8`) : en deçà, aucun dégât.
@@ -35,6 +50,10 @@ signal destruction_started()
 ## Émis à la sortie de cet état, la foreuse redevenant pilotable.
 signal destruction_finished()
 
+## Amélioration qui pilote `blindage_max`, résolue une fois depuis le catalogue :
+## aucun `id` d'amélioration n'est écrit ici.
+var _capacity_upgrade_id: String = ""
+
 var _impact_threshold: float = 0.0
 var _damage_per_speed: float = 0.0
 var _low_ratio: float = 0.0
@@ -54,6 +73,9 @@ var _configured: bool = false
 
 
 func _ready() -> void:
+	# Avant tout le reste : le maximum suit l'amélioration même si les réglages
+	# de dégâts sont absents.
+	_bind_capacity_upgrade()
 	if not GameData.has_armor_settings():
 		push_error("ArmorSystem — dégâts non chargés depuis %s : aucun dégât ne sera infligé." % GameData.DRILL_PATH)
 		set_physics_process(false)
@@ -67,6 +89,29 @@ func _ready() -> void:
 	# L'état initial est constaté, jamais émis : un enfant est prêt avant son
 	# parent, et un signal tiré ici n'aurait pas encore d'abonné.
 	_low_alert_sent = GameState.get_armor_ratio() <= _low_ratio
+
+
+## Story 5.5 — branche le maximum du blindage sur le niveau de l'amélioration
+## qui porte `blindage_max`, puis l'aligne sur le niveau **constaté** (sans effet
+## en début de partie : la valeur du niveau de départ est la valeur de départ).
+func _bind_capacity_upgrade() -> void:
+	_capacity_upgrade_id = GameData.get_upgrade_id_for_statistic(GameData.STAT_ARMOR_MAX)
+	if _capacity_upgrade_id.is_empty():
+		push_error("ArmorSystem — aucune amélioration ne porte « %s » : le blindage ne suivra aucun achat." % GameData.STAT_ARMOR_MAX)
+		return
+	GameState.upgrade_level_changed.connect(_on_upgrade_level_changed)
+	_apply_capacity(GameState.get_upgrade_level(_capacity_upgrade_id))
+
+
+func _on_upgrade_level_changed(upgrade_id: String, level: int) -> void:
+	if upgrade_id == _capacity_upgrade_id:
+		_apply_capacity(level)
+
+
+## Seul le **maximum** change (`Q60` (a)) : ni réparation, ni réduction de dégâts.
+## L'alerte « blindage faible » se recalcule sur ce maximum par `armor_changed`.
+func _apply_capacity(level: int) -> void:
+	GameState.set_armor_max(GameData.get_upgrade_value(_capacity_upgrade_id, level))
 
 
 ## Chronomètre de la transition de destruction. Aucun traitement hors transition.
@@ -88,6 +133,20 @@ func apply_impact(speed: float) -> void:
 		return
 	var damage: float = (speed - _impact_threshold) * _damage_per_speed
 	GameState.set_armor(GameState.get_armor() - damage)
+
+
+## Réparation de `points` de blindage, décidée et payée par `EconomySystem`
+## (story 5.3) : ce composant ne connaît **aucun prix**, il applique. Refusée
+## (faux, rien d'écrit) pendant la transition de destruction — la foreuse n'y est
+## ni pilotable ni réparable, sans tiers état (`M4`, `H3`) — ou pour un nombre de
+## points non positif. Le blindage reste borné par `GameState` (`M7`) ; le retour
+## au-dessus du seuil d'alerte est constaté par `_on_armor_changed()`, comme
+## pour toute variation.
+func repair(points: float) -> bool:
+	if _destroyed or points <= 0.0:
+		return false
+	GameState.set_armor(GameState.get_armor() + points)
+	return true
 
 
 ## La foreuse peut-elle agir — piloter, et à partir de la phase 3 forer ? Faux
@@ -127,9 +186,9 @@ func _update_low_alert(ratio: float) -> void:
 
 
 ## Sortie de l'état détruit. **Traitement provisoire et volontairement minimal** :
-## le blindage est remis au maximum et la partie continue. Aucun état persistant
-## n'est effacé — il n'existe à ce sprint ni cargo, ni crédits gagnés, ni
-## sauvegarde. La conséquence réelle (perte d'une **fraction** du cargo, règle
+## le blindage est remis au maximum et la partie continue. Aucun autre état n'est
+## touché — soute (phase 3), crédits (phase 5) et niveaux d'amélioration restent
+## intacts, et il n'existe pas encore de sauvegarde (`7.4`). La conséquence réelle (perte d'une **fraction** du cargo, règle
 ## « la perte n'est jamais totale » du §4.3) est l'objet de la story 6.7 : la
 ## construire ici reviendrait à la refaire. L'ordre des deux lignes compte —
 ## lever l'état **avant** de restaurer, sinon la restauration relancerait une

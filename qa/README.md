@@ -14,6 +14,8 @@ Aucune phase n'est commitée tant que sa gate n'est pas franchie.
 
 Un sprint = une phase du `stories/BACKLOG.md`. Chaque phase se termine par **une story de gate** :
 
+> *Exception ajoutée le 2026-10-02 (arbitrage `Q65` (b), story `5.16`)* : la **phase 6** compte **deux sprints successifs**, 6a « risque » puis 6b « narration ». Chacun se termine par **sa propre story d'audit** (`6.9` puis `6.11`, numéros prévisionnels) et **son propre commit**. La gate de tests humains `6.10` reste unique et **reportée** vers `7.8`. Le commit intermédiaire du sprint 6a suppose l'amendement de la règle « Commits Git » de `.claude/CLAUDE.md`, proposé à l'utilisateur.
+
 | Ordre | Story | Support | Sortie attendue |
 |---|---|---|---|
 | 1 | **Audit qualité code** | `qa/audit-qualite-reference.md` | Verdict **Autorisé** ou **KO**, consigné dans les *Notes* de la story |

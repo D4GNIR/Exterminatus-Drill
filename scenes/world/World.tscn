@@ -1,7 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://dewhr0lq7rkwb"]
+[gd_scene load_steps=6 format=3 uid="uid://dewhr0lq7rkwb"]
 
 [ext_resource type="Texture2D" uid="uid://bbvk6uhd3pchw" path="res://assets/sprites/tile_atlas_32x32.png" id="1_atlas"]
 [ext_resource type="Script" uid="uid://clu0d42yogaa8" path="res://scripts/systems/TerrainSystem.gd" id="2_terrain"]
+[ext_resource type="PackedScene" uid="uid://cn4lgtc4qk1xm" path="res://scenes/world/SurfaceStation.tscn" id="3_station"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_terrain"]
 texture = ExtResource("1_atlas")
@@ -100,5 +101,7 @@ tile_set = SubResource("TileSet_terrain")
 [node name="DecorationsLayer" type="TileMapLayer" parent="."]
 tile_set = SubResource("TileSet_terrain")
 collision_enabled = false
+
+[node name="SurfaceStation" parent="DecorationsLayer" instance=ExtResource("3_station")]
 
 [node name="Hazards" type="Node2D" parent="."]

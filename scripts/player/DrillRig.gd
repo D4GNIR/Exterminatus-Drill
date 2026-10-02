@@ -111,6 +111,10 @@ var cargo_system: CargoSystem = CargoSystem.new()
 
 var _world_bounds: Rect2 = Rect2()
 var _half_extents: Vector2 = Vector2.ZERO
+## Zone de surface des ancrages (story 5.1), en pixels monde. Vide sans ancrage
+## chargé : la foreuse n'est alors jamais « en surface » — `_place_at_spawn()` a
+## déjà signalé l'absence d'ancrages.
+var _surface_zone: Rect2 = Rect2()
 ## Appui au sol à la frame précédente : c'est **le passage** de faux à vrai qui
 ## constitue un choc, pas le fait d'être posé.
 var _was_grounded: bool = false
@@ -144,6 +148,7 @@ func _ready() -> void:
 	_fuel_system.fuel_low.connect(_on_fuel_low)
 	_fuel_system.fuel_depleted.connect(_on_fuel_depleted)
 	_fuel_system.fuel_restored.connect(_on_fuel_restored)
+	_fuel_system.fuel_low_cleared.connect(_on_fuel_low_cleared)
 	_armor_system.armor_low.connect(_on_armor_low)
 	_armor_system.destruction_started.connect(_on_destruction_started)
 	_armor_system.destruction_finished.connect(_on_destruction_finished)
@@ -152,6 +157,7 @@ func _ready() -> void:
 	_world_bounds = GameData.get_world_bounds()
 	_half_extents = _read_half_extents()
 	_place_at_spawn()
+	_surface_zone = GameData.get_surface_zone_rect() if GameData.has_anchors() else Rect2()
 	_publish_state()
 
 
@@ -377,10 +383,25 @@ func _on_fuel_depleted() -> void:
 	_play_alert(fuel_depleted_sound)
 
 
-## Le ravitaillement (phase 5) coupe une alerte encore en cours : le joueur ne
-## doit pas entendre une panne qu'il vient de résoudre.
+## Le ravitaillement (story 5.3) coupe une alerte **carburant** encore en
+## cours : le joueur ne doit pas entendre une panne qu'il vient de résoudre.
+## Une autre alerte (soute pleine, blindage faible…) partage le même lecteur et
+## **n'est pas interrompue** — point hérité de l'audit `4.5`, qui relevait un
+## `stop()` inconditionnel. Vaut à la sortie de panne sèche comme au retour
+## au-dessus du seuil de carburant bas.
 func _on_fuel_restored() -> void:
-	_alert_audio.stop()
+	_stop_fuel_alert()
+
+
+func _on_fuel_low_cleared() -> void:
+	_stop_fuel_alert()
+
+
+## Le flux courant du lecteur dit quelle alerte joue : seule une alerte de
+## carburant est coupée.
+func _stop_fuel_alert() -> void:
+	if _alert_audio.stream == fuel_low_sound or _alert_audio.stream == fuel_depleted_sound:
+		_alert_audio.stop()
 
 
 func _on_armor_low(_ratio: float) -> void:
@@ -412,7 +433,11 @@ func _play_alert(sound: AudioStream) -> void:
 ## Publication de l'état vers `GameState` (`C3`) : aucun nœud n'est appelé
 ## directement. La profondeur est une grandeur d'affichage en mètres, nulle en
 ## surface et croissante vers le bas (`y` positif) ; la position en pixels, elle,
-## sert à restituer la partie en phase 7.
+## sert à restituer la partie en phase 7. La présence en zone de surface (story
+## 5.1) est jugée sur le **centre** de la foreuse : posée sur la rangée 0, il est
+## au-dessus de la ligne de surface ; dès qu'elle s'enfonce de plus d'une
+## demi-hauteur, elle est sous terre et la station n'est plus accessible.
 func _publish_state() -> void:
 	GameState.set_drill_position(global_position)
 	GameState.set_depth_m(maxf(global_position.y, 0.0) / _pixels_per_meter)
+	GameState.set_in_surface_zone(_surface_zone.has_point(global_position))

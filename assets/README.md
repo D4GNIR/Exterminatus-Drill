@@ -94,6 +94,20 @@ Le bip de **destruction** reste le flux embarqué de `DrillRig.tscn` (sous-resso
 `AudioStreamWAV_alert`, story `2.3`). Reconnaissance à l'oreille et confort à la répétition :
 recette `7.8`.
 
+### Sprites de décor générés — `sprites/`
+
+Placeholders **générés par un agent** (`godot-dev`) : pixel art dessiné par un script Python jetable
+(Pillow, primitives rectangulaires, bruit de rouille à graine fixe), **hors dépôt**. **Aucune licence
+tierce** : œuvres originales du projet. Substituables **sans toucher au code ni à la scène** :
+remplacer le fichier sous le même nom suffit.
+
+| Fichier | Story · arbitrage | Emploi | Contenu |
+|---|---|---|---|
+| `prop_surface_station.png` | `5.1` · `Q55` | Station de surface (`scenes/world/SurfaceStation.tscn`, sous `World/DecorationsLayer`) | 192 × 128 px (6 × 4 tuiles), fond transparent : hangar d'acier riveté à porte à lames, rampe lumineuse orange, bannière rouge impérial à aigle stylisé, tour de communication à balise, réservoir de promethium rouillé, plateforme à bandes de signalisation. **Le pied de l'image est la ligne de surface** : le script pose le bas de la texture sur `y = 0`, quelle que soit sa taille. |
+
+Lisibilité à l'écran, cohérence avec l'atlas de tuiles et filtrage (aucun `texture_filter` n'est posé,
+comme pour le reste du projet) : recette `7.8`.
+
 ## Palette de référence (CDC — « Direction artistique »)
 
 Six teintes structurent l'ensemble du jeu :

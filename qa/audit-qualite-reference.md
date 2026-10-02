@@ -40,6 +40,18 @@ Référence CDC : section « Architecture Godot ».
 - [ ] B6 Aucun code mort, aucun `print()` de debug oublié (utiliser un flag de debug si nécessaire).
 - [ ] B7 Les commentaires expliquent le **pourquoi**, pas le **quoi** ; aucun commentaire mensonger ou obsolète.
 - [ ] B8 Pas de `TODO`/`FIXME` non tracés : chaque TODO restant correspond à une story identifiée.
+- [ ] B9 *(ajouté le 2026-10-02, story `5.13`)* **Aucune référence morte à un autoload** : tout membre lu sur `GameData` ou `GameState` (`GameData.X`, `GameState.X`) est **déclaré** dans l'autoload — y compris dans les **chemins d'erreur** qui ne s'exécutent pas au démarrage nominal.
+
+  > **Contrôle opposable** :
+  >
+  > ```
+  > grep -rhoE '\bGameData\.[A-Za-z_][A-Za-z0-9_]*' scripts/ scenes/ | sort -u
+  > grep -rhoE '\bGameState\.[A-Za-z_][A-Za-z0-9_]*' scripts/ scenes/ | sort -u
+  > ```
+  >
+  > Chaque membre remonté doit correspondre à une déclaration `const`, `func`, `var`, `signal` ou `enum` de `scripts/autoload/GameData.gd` ou `scripts/autoload/GameState.gd`. Un membre absent est un **KO**.
+  >
+  > **Pourquoi ce point** : `godot --headless --check-only` **ne résout pas** les identifiants d'autoload (faux positif connu, `stories/AVANCEMENT.md` §5), et une branche d'erreur n'est pas exercée par le démarrage. Défaut réel : `CameraSystem.gd` lisait quatre constantes `KEY_WORLD_*` supprimées par la story `3.2` ; ni l'audit `3.8` ni l'audit `4.5` ne l'ont relevé, aucun point ne le demandant (correction : story `5.14`). Le contrôle vaut à chaque suppression ou renommage d'un membre public d'autoload.
 
 ## C. Couplage et accès aux nœuds **[B]**
 
@@ -103,7 +115,11 @@ Référence CDC : section « Contrôles ».
   > ```
   >
   > Il doit ne **rien** remonter. ⚠️ **Ne pas utiliser `grep -rn "KEY_\|keycode\|scancode" scripts/`**, forme employée jusqu'au 2026-09-26 : elle remonte **72 faux positifs** — les constantes de **clés JSON** de `GameData` (`KEY_ID`, `KEY_TIERS`, `KEY_GRAVITY`, …), convention posée par la story `1.5`. Un `KEY_*` du projet nomme un champ de données ; une touche en dur se reconnaît à l'énumération `Key` du moteur ou à un champ d'événement clavier.
-- [ ] F2 **[B]** Les 12 actions du CDC existent dans `project.godot` : `move_up`, `move_down`, `move_left`, `move_right`, `drill`, `brake`, `use_item_1`, `use_item_2`, `use_item_3`, `toggle_inventory`, `toggle_journal`, `pause`.
+  >
+  > **Précision opposable** *(ajoutée le 2026-10-02, story `5.15`, sur le modèle de la précision de `C1`)* :
+  >
+  > Une occurrence remontée par le contrôle ci-dessus n'est **pas** automatiquement un KO. Est **conforme** la **lecture** des champs de touche (`physical_keycode`, `keycode`, sentinelle `KEY_NONE`) d'un événement **déclaré par l'Input Map** (obtenu par `InputMap.action_get_events()`), dans le **seul** but de **nommer** la touche à l'écran. Reste **non conforme** (KO) toute **comparaison** d'un événement reçu à une touche (`event.keycode == …`, `event.physical_keycode == KEY_…`) et tout **choix de touche** dans le code (`Key.KEY_…` affecté, injecté ou comparé). L'auditeur lit l'origine de l'événement — **Input Map** (lecture d'affichage, conforme) ou **événement reçu** (KO). Cas couvert à la date de la précision : `scripts/ui/ActionKeyLabel.gd` (story `5.1`, arbitrage `Q62` (a)), qui nomme la première touche clavier d'une action pour les invites de l'interface.
+- [ ] F2 **[B]** Les 12 actions du CDC existent dans `project.godot` : `move_up`, `move_down`, `move_left`, `move_right`, `drill`, `brake`, `use_item_1`, `use_item_2`, `use_item_3`, `toggle_inventory`, `toggle_journal`, `pause`. *Complété le 2026-10-02 (story `5.12`, arbitrage `Q54`) : à partir de la story `5.1`, une **treizième** action `interact` (touche `E`, `physical_keycode`) est attendue. C'est une **déviation de la section « Contrôles » du CDC principal, décidée par l'utilisateur et tracée** (écart `E22` de `stories/AVANCEMENT.md`) : sa présence n'est pas un KO ; son absence après `5.1`, ou toute autre action ajoutée sans arbitrage, en est un.*
 - [ ] F3 Les touches par défaut correspondent au CDC (ZQSD + flèches, Espace, Shift, 1/2/3, I/Tab, J, Échap).
 - [ ] **F4 [B]** La lecture d'input est faite au bon endroit (`_unhandled_input` pour les actions UI/ponctuelles, `Input.is_action_pressed` dans `_physics_process` pour le mouvement continu) ; les entrées consommées par l'UI ne fuient pas vers le gameplay.
 - [ ] **F5 [B]** *(arbitrage Q10)* **Aucun nœud de gameplay n'implémente `_input()`** — la lecture ponctuelle passe exclusivement par `_unhandled_input()`. Motif : `drill`/Espace, `pause`/Échap, `toggle_inventory`/Tab et les flèches partagent leurs touches avec les actions intégrées `ui_accept`, `ui_cancel`, `ui_focus_next` et `ui_up/down/left/right`. Un `_input()` dans le gameplay recevrait l'événement **avant** l'UI : Espace déclencherait le forage tout en validant un bouton. Contrôle : `grep -rn "func _input(" scripts/ scenes/` ne doit remonter aucun nœud de gameplay.
@@ -161,7 +177,7 @@ Référence CDC : sections « Règles autorisées » et « Règles interdites ou
 
   > **Précision opposable — archive et emplacements de référence** *(arbitrage **Q43** du 2026-09-27, story `3.16`)* :
   >
-  > 1. **`stories/AVANCEMENT-historique.md` est hors périmètre de `I7`.** C'est un document historique, figé le 2026-09-27, qui reçoit par transfert l'historique d'`AVANCEMENT.md`. L'auditeur ne le recherche pas. Il vérifie seulement qu'**aucun contenu courant** n'y a été ajouté après sa date de gel. *Précisé par l'arbitrage **`Q49`** du 2026-10-01 (story `4.8`)* : seul ajout licite après le gel, une **section datée en fin de fichier** portant la **table de détail d'une phase close**, transférée à sa clôture ; tout autre ajout, et toute modification du texte existant, est un KO.
+  > 1. **`stories/AVANCEMENT-historique.md` est hors périmètre de `I7`.** C'est un document historique, figé le 2026-09-27, qui reçoit par transfert l'historique d'`AVANCEMENT.md`. L'auditeur ne le recherche pas. Il vérifie seulement qu'**aucun contenu courant** n'y a été ajouté après sa date de gel. *Précisé par l'arbitrage **`Q49`** du 2026-10-01 (story `4.8`)* : seul ajout licite après le gel, une **section datée en fin de fichier** portant la **table de détail d'une phase close**, transférée à sa clôture ; tout autre ajout, et toute modification du texte existant, est un KO. *Élargi par l'arbitrage **`Q52`** du 2026-10-02 (story `5.10`)* : cette même section datée porte aussi les **risques levés**, **recommandations soldées** et **écarts résorbés** de la phase close, transférés depuis `AVANCEMENT.md`, qui ne les garde plus ; l'**en-tête** de l'archive peut être complété pour énoncer une règle d'alimentation arbitrée. Corollaire contrôlé par l'auditeur : après la clôture d'une phase, `AVANCEMENT.md` ne porte plus aucune ligne levée, soldée ou résorbée de cette phase.
   > 2. **Dans `AVANCEMENT.md`, un compteur ne figure qu'aux emplacements de référence** : les lignes « Stories créées », « Stories terminées » et « Avancement MVP » du §1, la table des phases et sa ligne « Total MVP », et le **registre `[H]`**. La prose (en-tête, autres lignes du §1, détail de la phase courante, couverture, risques, recommandations) ne porte **aucun** chiffre de stories, de `Terminée`, de pourcentage d'avancement ni de critères `[H]` : elle **renvoie** aux emplacements de référence. Un compteur trouvé dans la prose est un KO `I7`, **même si sa valeur est juste**.
   > 3. `AVANCEMENT.md` ne conserve que l'état **courant** : les risques et recommandations résolus, les énoncés d'origine et les contextes précédents vont dans l'archive. Les renvois antérieurs au 2026-09-27 vers une section d'`AVANCEMENT.md` se lisent dans l'archive.
 

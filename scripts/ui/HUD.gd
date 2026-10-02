@@ -34,6 +34,9 @@ class_name HUD
 ## son panneau d'alertes (`AlertSlot`, `AlertPanel.gd`), qui s'y abonne. Le HUD
 ## lui-même n'appelle rien sur la foreuse : les cinq jauges restent branchées
 ## sur `GameState` seul.
+## [br]— **Indication « Interagir »** (story 5.1, `Q62` (a)) : nœud `InteractHint`
+## de la scène, porteur de son propre script (`InteractHint.gd`), abonné à
+## `GameState` ; le HUD ne la pilote pas.
 ## [br]— **Validation headless** : ce fichier référence l'autoload `GameState` —
 ## faux « Identifier not found » en `--check-only`, exception de la story 1.9.
 

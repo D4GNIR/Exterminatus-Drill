@@ -10,9 +10,14 @@ class_name FuelSystem
 ##
 ## Contraintes de conception, opposables à l'audit :
 ## [br]— **La capacité du réservoir n'est pas ici** : c'est la statistique
-## `carburant_max` de l'amélioration `reacteur` (`data/upgrades.json`, story
-## `1.5`). La redéclarer créerait deux sources de vérité, et l'achat d'un
-## réacteur en phase 5 cesserait d'avoir un effet.
+## `carburant_max` de l'amélioration qui la pilote (`data/upgrades.json`, story
+## `1.5`). La redéclarer créerait deux sources de vérité. **Application de
+## l'achat (story 5.5)** : ce composant, propriétaire de la règle du réservoir,
+## écoute `GameState.upgrade_level_changed` et porte le maximum de `GameState` à
+## la valeur du nouveau niveau (`GameData.get_upgrade_value()`, fonction de
+## `5.6`) — **à la même image**, sans remplir le réservoir : le plein reste une
+## dépense de la station (CDC « Économie »). Le carburant courant n'est jamais
+## réduit par un achat (`GameState.set_fuel_max()` ne le borne qu'à la baisse).
 ## [br]— **Aucune valeur de gameplay ici** (`D1`) : les deux taux de consommation
 ## et le seuil d'alerte viennent de `data/drill.json`.
 ## [br]— **N'écrit dans aucun autre nœud** (`C3`) : il mute `GameState` et publie
@@ -35,6 +40,10 @@ signal fuel_low(ratio: float)
 ## recopié par l'interface qui affiche l'alerte.
 signal fuel_low_cleared()
 
+## Amélioration qui pilote `carburant_max`, résolue une fois depuis le catalogue :
+## aucun `id` d'amélioration n'est écrit ici.
+var _capacity_upgrade_id: String = ""
+
 var _thrust_consumption: float = 0.0
 var _idle_consumption: float = 0.0
 var _low_ratio: float = 0.0
@@ -50,6 +59,9 @@ var _low_alert_sent: bool = false
 
 
 func _ready() -> void:
+	# Avant tout le reste : la capacité suit l'amélioration même si les taux de
+	# consommation sont absents, la panne permanente ci-dessous n'y change rien.
+	_bind_capacity_upgrade()
 	if not GameData.has_drill_fuel():
 		# Panne sèche permanente, et non « carburant illimité » : sans taux de
 		# consommation, laisser propulser serait un repli silencieux — la
@@ -68,6 +80,28 @@ func _ready() -> void:
 	# — un enfant est prêt avant son parent — et l'alerte serait perdue.
 	_depleted = GameState.get_fuel() <= 0.0
 	_low_alert_sent = GameState.get_fuel_ratio() <= _low_ratio
+
+
+## Story 5.5 — branche le maximum du réservoir sur le niveau de l'amélioration
+## qui porte `carburant_max`, puis l'aligne sur le niveau **constaté** (sans effet
+## en début de partie : la valeur du niveau de départ est la valeur de départ).
+func _bind_capacity_upgrade() -> void:
+	_capacity_upgrade_id = GameData.get_upgrade_id_for_statistic(GameData.STAT_FUEL_MAX)
+	if _capacity_upgrade_id.is_empty():
+		push_error("FuelSystem — aucune amélioration ne porte « %s » : le réservoir ne suivra aucun achat." % GameData.STAT_FUEL_MAX)
+		return
+	GameState.upgrade_level_changed.connect(_on_upgrade_level_changed)
+	_apply_capacity(GameState.get_upgrade_level(_capacity_upgrade_id))
+
+
+func _on_upgrade_level_changed(upgrade_id: String, level: int) -> void:
+	if upgrade_id == _capacity_upgrade_id:
+		_apply_capacity(level)
+
+
+## Seul le **maximum** change : le réservoir n'est pas rempli (`5.5` critère 3).
+func _apply_capacity(level: int) -> void:
+	GameState.set_fuel_max(GameData.get_upgrade_value(_capacity_upgrade_id, level))
 
 
 ## Consommation au repos : le moteur tourne même sans poussée. Nulle si les

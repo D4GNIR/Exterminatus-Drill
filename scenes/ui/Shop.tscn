@@ -1,0 +1,258 @@
+[gd_scene format=3 uid="uid://b7f50jsmy00o6"]
+
+[ext_resource type="Theme" uid="uid://cof0fr65aer6v" path="res://scenes/ui/UiTheme.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://kkhuhejyg8iu" path="res://scripts/ui/Shop.gd" id="2_shop"]
+
+[node name="Shop" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_shop")
+
+[node name="Backdrop" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"ModalBackdrop"
+
+[node name="Center" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"ModalColumns"
+alignment = 1
+
+[node name="Frame" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(460, 0)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="Rows" type="VBoxContainer" parent="Center/Frame"]
+layout_mode = 2
+theme_type_variation = &"ModalRows"
+
+[node name="Title" type="Label" parent="Center/Frame/Rows"]
+layout_mode = 2
+theme_type_variation = &"ModalTitle"
+text = "STATION DE SURFACE"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Center/Frame/Rows"]
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+text = "Avant-poste impérial de Gehenna-7"
+horizontal_alignment = 1
+
+[node name="Sale" type="VBoxContainer" parent="Center/Frame/Rows"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"ModalRows"
+
+[node name="SaleHeader" type="Label" parent="Center/Frame/Rows/Sale"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+text = "CHARGEMENT À VENDRE"
+
+[node name="SaleEmpty" type="Label" parent="Center/Frame/Rows/Sale"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Soute vide : rien à vendre."
+horizontal_alignment = 1
+
+[node name="SaleLines" type="GridContainer" parent="Center/Frame/Rows/Sale"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"InventoryGrid"
+columns = 3
+
+[node name="TotalRow" type="HBoxContainer" parent="Center/Frame/Rows/Sale"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="TotalCaption" type="Label" parent="Center/Frame/Rows/Sale/TotalRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"HudCaption"
+text = "TOTAL"
+
+[node name="SaleTotal" type="Label" parent="Center/Frame/Rows/Sale/TotalRow"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="SellButton" type="Button" parent="Center/Frame/Rows/Sale"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Vendre la cargaison"
+
+[node name="SaleStatus" type="Label" parent="Center/Frame/Rows/Sale"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Services" type="VBoxContainer" parent="Center/Frame/Rows"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"ModalRows"
+
+[node name="ServicesHeader" type="Label" parent="Center/Frame/Rows/Services"]
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+text = "RAVITAILLEMENT ET RÉPARATION"
+
+[node name="FuelRow" type="HBoxContainer" parent="Center/Frame/Rows/Services"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="FuelCaption" type="Label" parent="Center/Frame/Rows/Services/FuelRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Carburant"
+
+[node name="FuelGauge" type="Label" parent="Center/Frame/Rows/Services/FuelRow"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="FuelQuote" type="Label" parent="Center/Frame/Rows/Services"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="RefuelButton" type="Button" parent="Center/Frame/Rows/Services"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Faire le plein"
+
+[node name="ArmorRow" type="HBoxContainer" parent="Center/Frame/Rows/Services"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ArmorCaption" type="Label" parent="Center/Frame/Rows/Services/ArmorRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Blindage"
+
+[node name="ArmorGauge" type="Label" parent="Center/Frame/Rows/Services/ArmorRow"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="RepairQuote" type="Label" parent="Center/Frame/Rows/Services"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="RepairButton" type="Button" parent="Center/Frame/Rows/Services"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Réparer le blindage"
+
+[node name="ServiceStatus" type="Label" parent="Center/Frame/Rows/Services"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="CloseRow" type="HBoxContainer" parent="Center/Frame/Rows"]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="CloseKey" type="Label" parent="Center/Frame/Rows/CloseRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HintKey"
+
+[node name="CloseCaption" type="Label" parent="Center/Frame/Rows/CloseRow"]
+layout_mode = 2
+text = "Quitter la station"
+
+[node name="UpgradesFrame" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="Upgrades" type="VBoxContainer" parent="Center/UpgradesFrame"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"ModalRows"
+
+[node name="UpgradesHeader" type="Label" parent="Center/UpgradesFrame/Upgrades"]
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+text = "AMÉLIORATIONS DE LA FOREUSE"
+
+[node name="CreditsRow" type="HBoxContainer" parent="Center/UpgradesFrame/Upgrades"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="CreditsCaption" type="Label" parent="Center/UpgradesFrame/Upgrades/CreditsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Crédits disponibles"
+
+[node name="UpgradeCredits" type="Label" parent="Center/UpgradesFrame/Upgrades/CreditsRow"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="UpgradeLines" type="GridContainer" parent="Center/UpgradesFrame/Upgrades"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"InventoryGrid"
+columns = 5
+
+[node name="NameHeader" type="Label" parent="Center/UpgradesFrame/Upgrades/UpgradeLines"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"HudCaption"
+text = "AMÉLIORATION"
+
+[node name="LevelHeader" type="Label" parent="Center/UpgradesFrame/Upgrades/UpgradeLines"]
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+text = "NIV."
+horizontal_alignment = 2
+
+[node name="EffectHeader" type="Label" parent="Center/UpgradesFrame/Upgrades/UpgradeLines"]
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+text = "VALEUR » SUIVANTE"
+horizontal_alignment = 2
+
+[node name="CostHeader" type="Label" parent="Center/UpgradesFrame/Upgrades/UpgradeLines"]
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+text = "COÛT"
+horizontal_alignment = 2
+
+[node name="BuyHeader" type="Label" parent="Center/UpgradesFrame/Upgrades/UpgradeLines"]
+layout_mode = 2
+
+[node name="UpgradeDetail" type="Label" parent="Center/UpgradesFrame/Upgrades"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+autowrap_mode = 3
+
+[node name="UpgradeStatus" type="Label" parent="Center/UpgradesFrame/Upgrades"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+autowrap_mode = 3

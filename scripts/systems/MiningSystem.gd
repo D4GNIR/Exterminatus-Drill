@@ -28,8 +28,11 @@ class_name MiningSystem
 ## `FuelSystem.has_fuel()`, jamais d'une notion de panne sèche réimplémentée ici.
 ## [br]4. `E3`/`G5` — cellule vide, hors carte ou indestructible : aucune destruction.
 ## [br]5. Puissance du foret contre `hardness` (critère 5).
-## [br]6. Durée de forage liée à `hardness` (critère 9), puis destruction et coût
-## en carburant (critère 4).
+## [br]6. Durée de forage liée à `hardness` (critère 9) **et à la puissance
+## courante** (story 5.5, `Q59` (b)) : durée de la story 3.4 tant que la
+## puissance ne dépasse pas la dureté maximale forable du terrain, raccourcie par
+## l'excédent au-delà — fonction unique de `5.6`, aucun calcul ici. Puis
+## destruction et coût en carburant (critère 4).
 ##
 ## Entrées **continues** (`Q10`, critère 8) : `Input.is_action_pressed()` lu en
 ## `_physics_process()`, comme le déplacement de la story 2.2. Aucun `_input()`,
@@ -106,6 +109,11 @@ func _ready() -> void:
 func setup(rig: CharacterBody2D, fuel_system: FuelSystem, armor_system: ArmorSystem, terrain: TerrainSystem) -> void:
 	if not GameData.has_drilling_settings():
 		push_error("MiningSystem — durée de forage non chargée depuis %s : forage désactivé." % GameData.DRILL_PATH)
+		return
+	# `Q59` (b) : sans dureté maximale forable, la durée selon la puissance est
+	# indisponible (0 s) — un forage instantané serait un repli silencieux.
+	if GameData.get_max_drillable_hardness() <= 0:
+		push_error("MiningSystem — dureté maximale forable indéterminée : forage désactivé.")
 		return
 	_power_upgrade_id = GameData.get_upgrade_id_for_statistic(GameData.STAT_DRILL_POWER)
 	if _power_upgrade_id.is_empty():
@@ -189,7 +197,8 @@ func _is_supported_for(direction: Vector2i) -> bool:
 
 
 ## Puissance **courante** du foret : effet du niveau atteint de l'amélioration,
-## relu à chaque demande pour qu'un achat en phase 5 prenne effet immédiatement.
+## relu dans `GameState` à chaque demande — un achat (story 5.4) prend donc effet
+## dès la demande suivante, sur le seuil de `hardness` comme sur la durée (5.5).
 func _drill_power() -> float:
 	return GameData.get_upgrade_value(_power_upgrade_id, GameState.get_upgrade_level(_power_upgrade_id))
 
@@ -208,7 +217,9 @@ func _start(cell: Vector2i, direction: Vector2i, info: TerrainSystem.CellInfo) -
 		_target_loot_entry = ""
 		_target_resource = info.resource_id
 	_elapsed = 0.0
-	_duration = GameData.get_drilling_duration(info.hardness)
+	# `Q59` (b) : la puissance courante raccourcit le forage au-delà de la dureté
+	# maximale forable ; en deçà, durée de la story 3.4, inchangée.
+	_duration = GameData.get_drilling_duration_for_power(info.hardness, _drill_power())
 	drilling_started.emit(cell, direction, _terrain.cell_to_world(cell), _duration, _target_resource)
 
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://bodv66a67tcor"]
+[gd_scene load_steps=8 format=3 uid="uid://bodv66a67tcor"]
 
 [ext_resource type="PackedScene" uid="uid://dewhr0lq7rkwb" path="res://scenes/world/World.tscn" id="1_world"]
 [ext_resource type="PackedScene" uid="uid://c8kxr2vqn7ptd" path="res://scenes/player/DrillRig.tscn" id="2_drillrig"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://x6lttpetywcn" path="res://scenes/ui/HUD.tscn" id="4_hud"]
 [ext_resource type="PackedScene" uid="uid://da5feb00gqagg" path="res://scenes/ui/PauseMenu.tscn" id="5_pausemenu"]
 [ext_resource type="PackedScene" uid="uid://cdi2uw2fc646f" path="res://scenes/ui/Inventory.tscn" id="6_inventory"]
+[ext_resource type="PackedScene" uid="uid://b7f50jsmy00o6" path="res://scenes/ui/Shop.tscn" id="7_shop"]
 
 [node name="Main" type="Node2D"]
 
@@ -26,13 +27,8 @@ drill_rig_path = NodePath("../../DrillRig")
 
 [node name="Inventory" parent="UI" instance=ExtResource("6_inventory")]
 
-[node name="Shop" type="Control" parent="UI"]
-visible = false
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="Shop" parent="UI" instance=ExtResource("7_shop")]
+drill_rig_path = NodePath("../../DrillRig")
 
 [node name="Dialogue" type="Control" parent="UI"]
 visible = false

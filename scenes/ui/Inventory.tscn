@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3 uid="uid://cdi2uw2fc646f"]
+[gd_scene format=3 uid="uid://cdi2uw2fc646f"]
 
 [ext_resource type="Theme" uid="uid://cof0fr65aer6v" path="res://scenes/ui/UiTheme.tres" id="1_theme"]
 [ext_resource type="Script" uid="uid://bfbuj6nnrt8as" path="res://scripts/ui/Inventory.gd" id="2_inventory"]
@@ -21,7 +21,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_type_variation = &"PauseBackdrop"
+theme_type_variation = &"ModalBackdrop"
 
 [node name="Center" type="CenterContainer" parent="."]
 layout_mode = 1
@@ -38,11 +38,11 @@ layout_mode = 2
 
 [node name="Rows" type="VBoxContainer" parent="Center/Frame"]
 layout_mode = 2
-theme_type_variation = &"PauseRows"
+theme_type_variation = &"ModalRows"
 
 [node name="Title" type="Label" parent="Center/Frame/Rows"]
 layout_mode = 2
-theme_type_variation = &"PauseTitle"
+theme_type_variation = &"ModalTitle"
 text = "SOUTE"
 horizontal_alignment = 1
 

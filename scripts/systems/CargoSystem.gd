@@ -30,6 +30,11 @@ class_name CargoSystem
 ## n'entre jamais en soute, même si une tuile la portait par erreur de données.
 ## [br]— **Aucun traitement de faveur** (`TM-3.13`) : l'adamantium est perdu
 ## exactement comme le fer industriel.
+## [br]— **Capacité suivie à l'achat** (story 5.5) : la soute écoute
+## `GameState.upgrade_level_changed` et porte la capacité de `GameState` à la
+## valeur du nouveau niveau de l'amélioration qui pilote `capacite_soute`
+## (`GameData.get_upgrade_value()`, fonction de `5.6`), à la même image. Le
+## contenu n'est pas touché ; le réarmement de l'alerte suit par `cargo_changed`.
 ##
 ## **Validation headless** : ce fichier référence les autoloads `GameData` et
 ## `GameState` — faux « Identifier not found » en `--check-only`, exception `1.9`.
@@ -48,6 +53,9 @@ signal ore_lost(resource_id: String, units: int, total_lost: int)
 ## Masse du plus léger des minerais actifs : en deçà, plus aucun minerai ne peut
 ## entrer, la soute est pleine. Calculée une fois depuis le catalogue.
 var _smallest_mass: int = 0
+## Amélioration qui pilote `capacite_soute`, résolue une fois depuis le catalogue :
+## aucun `id` d'amélioration n'est écrit ici.
+var _capacity_upgrade_id: String = ""
 var _full_alert_sent: bool = false
 var _lost_units: int = 0
 
@@ -63,10 +71,34 @@ func setup() -> bool:
 	if _smallest_mass <= 0:
 		push_error("CargoSystem — aucune ressource active de masse positive dans %s : soute désactivée." % GameData.RESOURCES_PATH)
 		return false
+	_bind_capacity_upgrade()
 	GameState.cargo_changed.connect(_on_cargo_changed)
 	# État initial constaté, jamais émis (même contrat que `FuelSystem`).
 	_full_alert_sent = GameState.get_cargo_free_space() < _smallest_mass
 	return true
+
+
+## Story 5.5 — branche la capacité sur le niveau de l'amélioration qui porte
+## `capacite_soute`, puis l'aligne sur le niveau **constaté** (sans effet en début
+## de partie : la valeur du niveau de départ est la valeur de départ).
+func _bind_capacity_upgrade() -> void:
+	_capacity_upgrade_id = GameData.get_upgrade_id_for_statistic(GameData.STAT_CARGO_CAPACITY)
+	if _capacity_upgrade_id.is_empty():
+		push_error("CargoSystem — aucune amélioration ne porte « %s » : la soute ne suivra aucun achat." % GameData.STAT_CARGO_CAPACITY)
+		return
+	GameState.upgrade_level_changed.connect(_on_upgrade_level_changed)
+	_apply_capacity(GameState.get_upgrade_level(_capacity_upgrade_id))
+
+
+func _on_upgrade_level_changed(upgrade_id: String, level: int) -> void:
+	if upgrade_id == _capacity_upgrade_id:
+		_apply_capacity(level)
+
+
+## La valeur est entière par construction (`valeur_depart` et `increment`
+## entiers, story 5.6) : la conversion ne perd rien.
+func _apply_capacity(level: int) -> void:
+	GameState.set_cargo_capacity(int(GameData.get_upgrade_value(_capacity_upgrade_id, level)))
 
 
 ## Minerai perdu depuis le début de la partie, en unités de soute (`G10`).

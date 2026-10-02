@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://x6lttpetywcn"]
+[gd_scene format=3 uid="uid://x6lttpetywcn"]
 
 [ext_resource type="Theme" uid="uid://cof0fr65aer6v" path="res://scenes/ui/UiTheme.tres" id="1_theme"]
 [ext_resource type="Script" uid="uid://tyis02qk80p7" path="res://scripts/ui/HUD.gd" id="2_hud"]
 [ext_resource type="Script" uid="uid://b55jnban8ijqq" path="res://scripts/ui/AlertPanel.gd" id="3_alertpanel"]
+[ext_resource type="Script" uid="uid://bx843rmkked25" path="res://scripts/ui/InteractHint.gd" id="4_interacthint"]
 
 [node name="HUD" type="Control"]
 layout_mode = 3
@@ -258,3 +259,34 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
+
+[node name="InteractHint" type="PanelContainer" parent="."]
+process_mode = 1
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -170.0
+offset_top = -88.0
+offset_right = 170.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("4_interacthint")
+
+[node name="Row" type="HBoxContainer" parent="InteractHint"]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="Key" type="Label" parent="InteractHint/Row"]
+layout_mode = 2
+theme_type_variation = &"HintKey"
+
+[node name="Caption" type="Label" parent="InteractHint/Row"]
+layout_mode = 2
+text = "Interagir avec la station"

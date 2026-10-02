@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=15 format=3 uid="uid://cof0fr65aer6v"]
+[gd_resource type="Theme" format=3 uid="uid://cof0fr65aer6v"]
 
 [ext_resource type="FontFile" uid="uid://dnr7g50f2gx5d" path="res://assets/fonts/Inquisitor.otf" id="1_regular"]
 [ext_resource type="FontFile" uid="uid://lfhwl6kcv8ti" path="res://assets/fonts/Inquisitor Bold.otf" id="2_bold"]
@@ -63,7 +63,7 @@ border_width_bottom = 2
 border_color = Color(0.96, 0.82, 0.62, 1)
 corner_detail = 1
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause_backdrop"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal_backdrop"]
 bg_color = Color(0.02, 0.02, 0.025, 0.62)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_normal"]
@@ -149,6 +149,9 @@ ArmorBar/base_type = &"ProgressBar"
 ArmorBar/styles/fill = SubResource("StyleBoxFlat_armor_fill")
 CargoBar/base_type = &"ProgressBar"
 CargoBar/styles/fill = SubResource("StyleBoxFlat_cargo_fill")
+HintKey/base_type = &"Label"
+HintKey/colors/font_color = Color(0.98, 0.72, 0.38, 1)
+HintKey/fonts/font = ExtResource("2_bold")
 HudCaption/base_type = &"Label"
 HudCaption/colors/font_color = Color(0.68, 0.7, 0.73, 1)
 HudCaption/fonts/font = ExtResource("2_bold")
@@ -163,14 +166,16 @@ MessageLossLabel/base_type = &"Label"
 MessageLossLabel/colors/font_color = Color(0.86, 0.56, 0.36, 1)
 MessageRefusedLabel/base_type = &"Label"
 MessageRefusedLabel/colors/font_color = Color(0.68, 0.7, 0.73, 1)
+ModalBackdrop/base_type = &"Panel"
+ModalBackdrop/styles/panel = SubResource("StyleBoxFlat_modal_backdrop")
+ModalColumns/base_type = &"HBoxContainer"
+ModalColumns/constants/separation = 24
+ModalRows/base_type = &"VBoxContainer"
+ModalRows/constants/separation = 12
+ModalTitle/base_type = &"Label"
+ModalTitle/colors/font_color = Color(0.88, 0.48, 0.1, 1)
+ModalTitle/font_sizes/font_size = 30
+ModalTitle/fonts/font = ExtResource("2_bold")
 PanelContainer/styles/panel = SubResource("StyleBoxFlat_panel")
-PauseBackdrop/base_type = &"Panel"
-PauseBackdrop/styles/panel = SubResource("StyleBoxFlat_pause_backdrop")
-PauseRows/base_type = &"VBoxContainer"
-PauseRows/constants/separation = 12
-PauseTitle/base_type = &"Label"
-PauseTitle/colors/font_color = Color(0.88, 0.48, 0.1, 1)
-PauseTitle/font_sizes/font_size = 30
-PauseTitle/fonts/font = ExtResource("2_bold")
 ProgressBar/styles/background = SubResource("StyleBoxFlat_bar_bg")
 ProgressBar/styles/fill = SubResource("StyleBoxFlat_bar_fill")

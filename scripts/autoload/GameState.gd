@@ -48,8 +48,16 @@ signal credits_changed(credits: int)
 signal cargo_changed(used: int, capacity: int)
 ## Émis à chaque variation de la profondeur courante, en mètres.
 signal depth_changed(depth_m: float)
+## Émis quand la foreuse entre dans la zone de surface ou en sort (story 5.1) :
+## la station n'est accessible que dans cette zone, et le HUD y affiche son
+## indication d'interaction.
+signal surface_zone_changed(in_zone: bool)
 ## Émis après l'achat d'une amélioration (« la statistique associée est modifiée
-## immédiatement », critères d'acceptation MVP) — consommé en phase 5.
+## immédiatement », critères d'acceptation MVP). Story 5.5 : chaque système
+## propriétaire d'une statistique s'y abonne et applique lui-même la valeur du
+## niveau — `FuelSystem` (`carburant_max`), `ArmorSystem` (`blindage_max`),
+## `CargoSystem` (`capacite_soute`) ; `MiningSystem` relit le niveau du foret à
+## chaque demande. L'état ne porte pas cette règle (`C6`).
 signal upgrade_level_changed(upgrade_id: String, level: int)
 ## Émis à la pose ou au retrait d'un flag narratif — consommé en phase 6.
 signal narrative_flag_changed(flag_id: String, value: bool)
@@ -84,6 +92,10 @@ var _depth_m: float = 0.0
 ## une grandeur d'affichage, la position sert à restituer la partie (phase 7).
 var _drill_position_x: float = 0.0
 var _drill_position_y: float = 0.0
+## La foreuse est-elle dans la zone de surface (story 5.1) ? Grandeur **dérivée**
+## de la position et des ancrages, publiée par la foreuse comme la profondeur :
+## l'état ne sait pas où est la zone, il retient seulement la réponse.
+var _in_surface_zone: bool = false
 ## Contenu de la soute : `resource_id` → nombre d'unités. Les `resource_id` sont
 ## ceux de `data/resources.json` (story 1.5) ; aucune valeur de vente n'est
 ## stockée ici.
@@ -91,10 +103,10 @@ var _cargo: Dictionary[String, int] = {}
 ## Somme des unités en soute. Dérivé de `_cargo` : jamais écrit de l'extérieur.
 var _cargo_used: int = 0
 var _cargo_capacity: int = MIN_CARGO_CAPACITY
-## `upgrade_id` → niveau atteint. Les `id`, les paliers et leurs effets chiffrés
-## vivent dans `data/upgrades.json`, jamais ici : l'état ne connaît que des
-## références. Peuplé par `reset_new_game()` depuis les améliorations actives au
-## MVP déclarées par `GameData`.
+## `upgrade_id` → niveau atteint. Les `id`, les paramètres de progression et
+## les effets chiffrés vivent dans `data/upgrades.json`, jamais ici : l'état ne
+## connaît que des références. Peuplé par `reset_new_game()` depuis les
+## améliorations actives au MVP déclarées par `GameData`.
 var _upgrade_levels: Dictionary[String, int] = {}
 ## `flag_id` → posé ou non. Sert la progression narrative (phase 6).
 var _narrative_flags: Dictionary[String, bool] = {}
@@ -124,6 +136,9 @@ func reset_new_game() -> void:
 	_depth_m = 0.0
 	_drill_position_x = 0.0
 	_drill_position_y = 0.0
+	# Recalculée par la foreuse à sa prochaine publication : l'état de départ
+	# n'affirme rien sur une position qu'il ne connaît pas encore.
+	_in_surface_zone = false
 	_cargo.clear()
 	_cargo_used = 0
 	_cargo_capacity = maxi(int(GameData.get_start_stat(GameData.STAT_CARGO_CAPACITY)), MIN_CARGO_CAPACITY)
@@ -137,6 +152,7 @@ func reset_new_game() -> void:
 	credits_changed.emit(_credits)
 	cargo_changed.emit(_cargo_used, _cargo_capacity)
 	depth_changed.emit(_depth_m)
+	surface_zone_changed.emit(_in_surface_zone)
 	for upgrade_id: String in _upgrade_levels:
 		upgrade_level_changed.emit(upgrade_id, _upgrade_levels[upgrade_id])
 
@@ -313,6 +329,18 @@ func get_drill_position() -> Vector2:
 	return Vector2(_drill_position_x, _drill_position_y)
 
 
+func is_in_surface_zone() -> bool:
+	return _in_surface_zone
+
+
+## Notifie seulement les changements : la foreuse publie à chaque image.
+func set_in_surface_zone(value: bool) -> void:
+	if value == _in_surface_zone:
+		return
+	_in_surface_zone = value
+	surface_zone_changed.emit(_in_surface_zone)
+
+
 # --- Améliorations ------------------------------------------------------------
 
 ## Niveau atteint pour une amélioration. Un `id` inconnu renvoie le niveau
@@ -322,8 +350,9 @@ func get_upgrade_level(upgrade_id: String) -> int:
 	return _upgrade_levels.get(upgrade_id, MIN_UPGRADE_LEVEL)
 
 
-## Le plafond de niveau dépend du nombre de paliers déclarés dans
-## `data/upgrades.json` : le vérifier appartient au système d'améliorations.
+## Aucun plafond de niveau (story 5.6, `Q18`, `L2`) : seul le plancher, le niveau
+## de départ, est garanti ici. Vérifier le coût et l'`id` appartient au système
+## d'améliorations (story 5.4).
 func set_upgrade_level(upgrade_id: String, level: int) -> void:
 	var clamped: int = maxi(level, MIN_UPGRADE_LEVEL)
 	if clamped == get_upgrade_level(upgrade_id):

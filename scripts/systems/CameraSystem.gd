@@ -15,7 +15,8 @@ extends Camera2D
 ## [br]— **Aucun chemin de nœud en dur** (`C1`) : la cible est un `@export`
 ## renseigné dans la scène (`C2`), donc modifiable sans toucher au code.
 ## [br]— **Aucune valeur de gameplay ni de cadrage en dur** (`D1`/`D4`) :
-## amortissement, zoom et bords viennent de `data/drill.json`.
+## amortissement et zoom viennent de `data/drill.json`, les bords de carte de
+## `data/generation.json` (dérivés des tuiles par `GameData`, story 3.2).
 ## [br]— **Rien de lourd par frame** (`H6`) : le suivi ne fait qu'une affectation
 ## de position ; tous les réglages sont lus une fois, dans `_ready()`.
 ## [br]— **Validation headless** : ce fichier référence l'autoload `GameData` —
@@ -41,7 +42,9 @@ func _ready() -> void:
 		set_physics_process(false)
 		return
 	if not GameData.has_camera_settings() or not GameData.has_world_bounds():
-		push_error("CameraSystem — réglages de caméra ou bords de carte non chargés depuis %s : suivi désactivé." % GameData.DRILL_PATH)
+		push_error("CameraSystem — réglages de caméra (%s) ou bords de carte (%s) non chargés : suivi désactivé." % [
+			GameData.DRILL_PATH, GameData.GENERATION_PATH,
+		])
 		set_physics_process(false)
 		return
 
@@ -78,10 +81,14 @@ func _physics_process(_delta: float) -> void:
 func _warn_if_view_exceeds_bounds(bounds: Rect2, factor: float) -> void:
 	var visible_size: Vector2 = get_viewport_rect().size / factor
 	if bounds.size.x < visible_size.x:
-		push_error("CameraSystem — carte trop étroite (%.0f px) pour la vue (%.0f px) : élargir « %s »/« %s » ou augmenter « %s » dans %s." % [
-			bounds.size.x, visible_size.x, GameData.KEY_WORLD_LEFT, GameData.KEY_WORLD_RIGHT, GameData.KEY_CAMERA_ZOOM, GameData.DRILL_PATH,
+		push_error("CameraSystem — carte trop étroite (%.0f px) pour la vue (%.0f px) : augmenter « %s » (bloc « %s » de %s, en tuiles) ou « %s » (bloc « %s » de %s)." % [
+			bounds.size.x, visible_size.x,
+			GameData.KEY_MAP_WIDTH, GameData.ROOT_WORLD, GameData.GENERATION_PATH,
+			GameData.KEY_CAMERA_ZOOM, GameData.ROOT_CAMERA, GameData.DRILL_PATH,
 		])
 	if bounds.size.y < visible_size.y:
-		push_error("CameraSystem — carte trop basse (%.0f px) pour la vue (%.0f px) : élargir « %s »/« %s » ou augmenter « %s » dans %s." % [
-			bounds.size.y, visible_size.y, GameData.KEY_WORLD_TOP, GameData.KEY_WORLD_BOTTOM, GameData.KEY_CAMERA_ZOOM, GameData.DRILL_PATH,
+		push_error("CameraSystem — carte trop basse (%.0f px) pour la vue (%.0f px) : augmenter « %s »/« %s » (bloc « %s » de %s, en tuiles) ou « %s » (bloc « %s » de %s)." % [
+			bounds.size.y, visible_size.y,
+			GameData.KEY_MAP_SURFACE, GameData.KEY_MAP_DEPTH, GameData.ROOT_WORLD, GameData.GENERATION_PATH,
+			GameData.KEY_CAMERA_ZOOM, GameData.ROOT_CAMERA, GameData.DRILL_PATH,
 		])
