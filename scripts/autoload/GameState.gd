@@ -437,5 +437,9 @@ func set_narrative_flag(flag_id: String, value: bool) -> void:
 	narrative_flag_changed.emit(flag_id, value)
 
 
+## Copie des flags, **dans l'ordre de leur première pose** (un `Dictionary`
+## conserve l'ordre d'insertion) : le journal (story 6.5) en tire l'ordre de
+## rencontre des événements. Une restitution (`7.1`) doit les reposer dans cet
+## ordre.
 func get_narrative_flags() -> Dictionary[String, bool]:
 	return _narrative_flags.duplicate()

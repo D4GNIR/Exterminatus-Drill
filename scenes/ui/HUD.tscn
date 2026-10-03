@@ -248,6 +248,29 @@ size_flags_horizontal = 3
 theme_type_variation = &"AlertLabel"
 text = "PLEINE : PLUS DE COLLECTE"
 
+[node name="AnomalyNearAlert" type="PanelContainer" parent="AlertSlot"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"AlertBanner"
+
+[node name="Row" type="HBoxContainer" parent="AlertSlot/AnomalyNearAlert"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Tag" type="Label" parent="AlertSlot/AnomalyNearAlert/Row"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+theme_type_variation = &"AlertTagAnomaly"
+text = "ANOMALIE"
+
+[node name="Text" type="Label" parent="AlertSlot/AnomalyNearAlert/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"AlertAnomalyLabel"
+text = "PROCHE"
+
 [node name="LossCounter" type="Label" parent="AlertSlot"]
 unique_name_in_owner = true
 visible = false

@@ -34,6 +34,9 @@ class_name HUD
 ## son panneau d'alertes (`AlertSlot`, `AlertPanel.gd`), qui s'y abonne. Le HUD
 ## lui-même n'appelle rien sur la foreuse : les cinq jauges restent branchées
 ## sur `GameState` seul.
+## [br]— **Alerte « anomalie proche »** (story 6.4) : `AnomalyDetector`, nœud de
+## `Main`, est injecté de la même façon (`anomaly_detector_path`) et transmis au
+## panneau d'alertes (`AlertPanel.bind_anomaly()`), qui s'abonne à ses signaux.
 ## [br]— **Indication « Interagir »** (story 5.1, `Q62` (a)) : nœud `InteractHint`
 ## de la scène, porteur de son propre script (`InteractHint.gd`), abonné à
 ## `GameState` ; le HUD ne la pilote pas.
@@ -43,6 +46,9 @@ class_name HUD
 ## Foreuse dont les alertes sont affichées, renseignée dans `Main.tscn`. Vide,
 ## les jauges fonctionnent et l'absence d'alertes est signalée.
 @export var drill_rig_path: NodePath
+## Détecteur de l'alerte « anomalie proche » (story 6.4), renseigné dans
+## `Main.tscn`. Vide, le reste du HUD fonctionne et l'absence est signalée.
+@export var anomaly_detector_path: NodePath
 
 @onready var _fuel_bar: ProgressBar = %FuelBar
 @onready var _fuel_value: Label = %FuelValue
@@ -67,6 +73,12 @@ func _ready() -> void:
 	_on_credits_changed(GameState.get_credits())
 	_on_cargo_changed(GameState.get_cargo_used(), GameState.get_cargo_capacity())
 	_on_depth_changed(GameState.get_depth_m())
+
+	var detector: AnomalyDetector = get_node_or_null(anomaly_detector_path) as AnomalyDetector
+	if detector == null:
+		push_error("HUD — détecteur d'anomalie introuvable (« %s ») : alerte « anomalie proche » non affichée." % anomaly_detector_path)
+	else:
+		_alert_panel.bind_anomaly(detector)
 
 	var rig: DrillRig = get_node_or_null(drill_rig_path) as DrillRig
 	if rig == null:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://bodv66a67tcor"]
+[gd_scene load_steps=13 format=3 uid="uid://bodv66a67tcor"]
 
 [ext_resource type="PackedScene" uid="uid://dewhr0lq7rkwb" path="res://scenes/world/World.tscn" id="1_world"]
 [ext_resource type="PackedScene" uid="uid://c8kxr2vqn7ptd" path="res://scenes/player/DrillRig.tscn" id="2_drillrig"]
@@ -8,6 +8,10 @@
 [ext_resource type="PackedScene" uid="uid://cdi2uw2fc646f" path="res://scenes/ui/Inventory.tscn" id="6_inventory"]
 [ext_resource type="PackedScene" uid="uid://b7f50jsmy00o6" path="res://scenes/ui/Shop.tscn" id="7_shop"]
 [ext_resource type="PackedScene" uid="uid://btl7flxkeeinq" path="res://scenes/ui/DangerIndicator.tscn" id="8_danger"]
+[ext_resource type="Script" uid="uid://bmwdk5ytg1dhi" path="res://scripts/systems/NarrativeSystem.gd" id="9_narrative"]
+[ext_resource type="PackedScene" uid="uid://dbxcxrcmxjccr" path="res://scenes/ui/Dialogue.tscn" id="10_dialogue"]
+[ext_resource type="PackedScene" uid="uid://cgk1qkth6tv88" path="res://scenes/world/AnomalyDetector.tscn" id="11_anomaly"]
+[ext_resource type="PackedScene" uid="uid://dt6lo0fdbyh0p" path="res://scenes/ui/Journal.tscn" id="12_journal"]
 
 [node name="Main" type="Node2D"]
 
@@ -22,23 +26,26 @@ target_path = NodePath("../DrillRig")
 
 [node name="DangerIndicator" parent="." instance=ExtResource("8_danger")]
 
+[node name="NarrativeSystem" type="Node" parent="."]
+script = ExtResource("9_narrative")
+
+[node name="AnomalyDetector" parent="." instance=ExtResource("11_anomaly")]
+
 [node name="UI" type="CanvasLayer" parent="."]
 process_mode = 3
 
 [node name="HUD" parent="UI" instance=ExtResource("4_hud")]
 drill_rig_path = NodePath("../../DrillRig")
+anomaly_detector_path = NodePath("../../AnomalyDetector")
 
 [node name="Inventory" parent="UI" instance=ExtResource("6_inventory")]
 
 [node name="Shop" parent="UI" instance=ExtResource("7_shop")]
 drill_rig_path = NodePath("../../DrillRig")
 
-[node name="Dialogue" type="Control" parent="UI"]
-visible = false
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="Dialogue" parent="UI" instance=ExtResource("10_dialogue")]
+narrative_system_path = NodePath("../../NarrativeSystem")
 
 [node name="PauseMenu" parent="UI" instance=ExtResource("5_pausemenu")]
+
+[node name="Journal" parent="UI" instance=ExtResource("12_journal")]

@@ -86,6 +86,9 @@ circulaire), importées en boucle (`edit/loop_mode=2`, Forward, dans leur `.impo
 des formants de voyelle sombre, plusieurs voix légèrement désaccordées. Le flux de chaque palier est
 désigné par son chemin dans `data/generation.json` (bloc `indicateur_danger`) : remplacer le fichier sous
 le même nom, ou changer ce chemin, suffit. Le premier palier n'a volontairement **aucune** ambiance.
+Le son d'alerte « anomalie proche » de la story `6.4` (arbitrage `Q69` (a), généré le 2026-10-03) est
+synthétisé en Python avec **numpy** (graine fixe 64), même format, **non bouclé** ; il est joué par le
+lecteur `AlertAudio` de `scenes/world/AnomalyDetector.tscn`, distinct du lecteur d'alertes de la foreuse.
 **Aucune licence tierce** : œuvres originales du projet. Ils sont **substituables sans toucher au code** :
 remplacer le fichier sous le même nom suffit (le flux est référencé par la scène, jamais par un
 chemin dans un script). Le script générateur n'est pas versionné (outil jetable, hors dépôt).
@@ -100,6 +103,7 @@ chemin dans un script). Le script générateur n'est pas versionné (outil jetab
 | `sfx_alert_cargo_full.wav` | `4.2` · `Q45` | Soute pleine | Deux coups de cloche métallique (partiels inharmoniques), grave puis aigu, 0,64 s |
 | `sfx_drill_refused.wav` | `4.2` · `Q45` | Forage refusé | Choc sourd et bref (sinus 110 Hz + bruit filtré), 0,16 s |
 | `sfx_threat_encounter.wav` | `6.6` · `Q69` (a) — généré le 2026-10-02 | Rencontre hostile (courbe de risque §4.2), joué par `DrillFeedback.tscn` (`ThreatAudio`) | Choc grave (sinus 95 → 45 Hz) et gravats (bruit filtré bref), puis cri strident en dents de scie 1150 → 620 Hz à vibrato, 0,62 s |
+| `sfx_alert_anomaly_near.wav` | `6.4` · `Q69` (a) — généré le 2026-10-03 | Alerte « anomalie proche » (CDC « Direction sonore »), joué par `AnomalyDetector.tscn` (`AlertAudio`) à l'entrée dans le rayon d'alerte | Trois « pings » de sonar spectral montants (sinus 1180 → 1320 → 1480 Hz modulés en anneau à 47 Hz, écho à l'octave inférieure) sur une nappe grave murmurante (70 → 95 Hz, trémolo lent), 1,4 s — ni bip carré, ni klaxon, ni cloche, ni choc ou cri de rencontre |
 | `amb_depth_necropolis.wav` | `6.8` · `Q69` (a) — généré le 2026-10-03 | Ambiance du palier 2 « Nécropole oubliée » (indicateur de danger, `DangerIndicator.tscn`), boucle | Drone grave battant (41 / 41,5 Hz) et harmoniques, vent souterrain (bruit filtré à houle lente), coups sourds de pierre et de métal toutes les 4 s, 12 s |
 | `amb_depth_entrails_choir.wav` | `6.8` · `Q69` (a) — généré le 2026-10-03 | Ambiance du palier 3 « Entrailles hérétiques », boucle | **Chœur grave** en voyelle « ou » (ré 2 + la 2, quinte à vide, trois voix par note), houle lente, drone à l'octave inférieure et souffle sourd, 12 s |
 | `amb_depth_core_choir.wav` | `6.8` · `Q69` (a) — généré le 2026-10-03 | Ambiance du palier 4 « Cœur de Gehenna-7 », boucle | **Chœur grave dissonant** en voyelle « a » (ré 2, mi♭ 2, sol♯ 2 : seconde mineure et triton), grondement sismique, battement lent oppressant à 0,75 Hz, 12 s |
@@ -111,13 +115,16 @@ recette `7.8`.
 ### Sprites de décor générés — `sprites/`
 
 Placeholders **générés par un agent** (`godot-dev`) : pixel art dessiné par un script Python jetable
-(Pillow, primitives rectangulaires, bruit de rouille à graine fixe), **hors dépôt**. **Aucune licence
+(Pillow, primitives rectangulaires, bruit de rouille à graine fixe), **hors dépôt**. Celui de la story
+`6.4` (arbitrage `Q69` (a), généré le 2026-10-03) suit la même méthode, avec **numpy** (graine fixe 64)
+pour le halo et les fissures. **Aucune licence
 tierce** : œuvres originales du projet. Substituables **sans toucher au code ni à la scène** :
 remplacer le fichier sous le même nom suffit.
 
 | Fichier | Story · arbitrage | Emploi | Contenu |
 |---|---|---|---|
 | `prop_surface_station.png` | `5.1` · `Q55` | Station de surface (`scenes/world/SurfaceStation.tscn`, sous `World/DecorationsLayer`) | 192 × 128 px (6 × 4 tuiles), fond transparent : hangar d'acier riveté à porte à lames, rampe lumineuse orange, bannière rouge impérial à aigle stylisé, tour de communication à balise, réservoir de promethium rouillé, plateforme à bandes de signalisation. **Le pied de l'image est la ligne de surface** : le script pose le bas de la texture sur `y = 0`, quelle que soit sa taille. |
+| `prop_anomaly_necropolis.png` | `6.4` · `Q69` (a) — généré le 2026-10-03 | Anomalie scénarisée (`scenes/world/AnomalyMarker.tscn`, sous `World/DecorationsLayer`), à l'ancrage de `data/generation.json` | 96 × 96 px (3 × 3 tuiles), fond transparent : monolithe d'obsidienne pré-impérial à pointe, glyphes et œil central vert spectral, socle de gravats, fissures lumineuses rayonnantes, halo vert diffus. **Le centre de l'image est le centre de la cellule d'ancrage** (sprite centré), quelle que soit sa taille. |
 
 Lisibilité à l'écran, cohérence avec l'atlas de tuiles et filtrage (aucun `texture_filter` n'est posé,
 comme pour le reste du projet) : recette `7.8`.

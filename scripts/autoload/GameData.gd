@@ -36,13 +36,15 @@ extends Node
 # appelants (chemins cités dans leurs messages d'erreur, statistiques, sentinelle
 # de profondeur, clés du zoom et de la carte — story 5.14). Les autres clés JSON
 # appartiennent désormais à leur chargeur — aucun script hors de `GameData` ne
-# les lisait (story 5.11, Notes). Les chemins de `upgrades.json` et `events.json`
-# n'ont pas d'alias ici : aucun appelant ne les cite, ils restent
-# `UpgradeCatalog.PATH` et `EventCatalog.PATH` (story 5.15, `B7`).
+# les lisait (story 5.11, Notes). Le chemin de `upgrades.json` n'a pas d'alias
+# ici : aucun appelant ne le cite, il reste `UpgradeCatalog.PATH` (story 5.15,
+# `B7`). Celui de `events.json` en a un depuis la story 6.4 : `AnomalyDetector`
+# le cite dans son message d'erreur.
 
 const RESOURCES_PATH: String = ResourceCatalog.PATH
 const DRILL_PATH: String = DrillSettings.PATH
 const GENERATION_PATH: String = GenerationSettings.PATH
+const EVENTS_PATH: String = EventCatalog.PATH
 
 const STAT_CARGO_CAPACITY: String = UpgradeCatalog.STAT_CARGO_CAPACITY
 const STAT_FUEL_MAX: String = UpgradeCatalog.STAT_FUEL_MAX
@@ -53,6 +55,13 @@ const STAT_ARMOR_MAX: String = UpgradeCatalog.STAT_ARMOR_MAX
 ## palier de profondeur.
 const DEPTH_UNBOUNDED: float = GenerationSettings.DEPTH_UNBOUNDED
 const KEY_CAMERA_ZOOM: String = DrillSettings.KEY_CAMERA_ZOOM
+
+## Types de condition de déclenchement des événements narratifs (story 6.3),
+## évalués par `NarrativeSystem` : ce sont des identifiants de données, repris de
+## `EventCatalog`, sans valeur nouvelle. `profondeur_min_m` retiré par la story
+## 6.4 (`B6`) : plus aucun événement ne l'employait.
+const EVENT_TRIGGER_ANOMALY_PROXIMITY: String = EventCatalog.TRIGGER_ANOMALY_PROXIMITY
+const EVENT_TRIGGER_GAME_START: String = EventCatalog.TRIGGER_GAME_START
 
 ## Blocs et champs cités par les messages d'erreur de `CameraSystem` (story
 ## 5.14) : zoom dans le bloc `camera` de `drill.json`, dimensions de carte, en
@@ -637,6 +646,15 @@ func get_anomaly_cell() -> Vector2i:
 	return _generation.get_anomaly_cell()
 
 
+## Centre de la cellule de l'anomalie, en pixels monde (story 6.3) : dérivé de
+## `get_anomaly_cell()` avec les conventions de la carte (colonne 0 = `[0, tuile[`,
+## rangée 0 = première rangée sous la ligne de surface). Point de mesure de la
+## condition de proximité de `NarrativeSystem` (`Q71` (a)) ; aucune coordonnée
+## hors des données (`K3`).
+func get_anomaly_center_position() -> Vector2:
+	return _generation.get_anomaly_center_position()
+
+
 ## Strates de terrain, de la surface vers le fond. Copie défensive : le catalogue
 ## reste immuable pour ses lecteurs.
 func get_strata() -> Array[Dictionary]:
@@ -757,8 +775,9 @@ func get_danger_ambience_volume_db(layer_id: String) -> float:
 
 
 # --- Événements narratifs -----------------------------------------------------
-# La façade reste volontairement générique : la structure d'un événement n'est
-# figée qu'en phase 6 (stories 6.2 à 6.4).
+# Lus par `NarrativeSystem` (story 6.3) : flag et condition typée de chaque
+# événement. Les lignes et le nom du locuteur sont lus par le dialogue (story
+# 6.2) et par le journal (story 6.5), qui lit aussi le nom de l'événement.
 
 func has_event(event_id: String) -> bool:
 	return _events.has_event(event_id)
@@ -774,3 +793,63 @@ func get_event_ids() -> Array[String]:
 
 func get_mvp_event_ids() -> Array[String]:
 	return _events.get_mvp_event_ids()
+
+
+## Flag narratif posé au déclenchement de l'événement : il en porte **seul**
+## l'unicité (story 6.3).
+func get_event_flag(event_id: String) -> String:
+	return _events.get_event_flag(event_id)
+
+
+## Type de condition, parmi les constantes `EVENT_TRIGGER_*` (story 6.3).
+func get_event_trigger_type(event_id: String) -> String:
+	return _events.get_event_trigger_type(event_id)
+
+
+## Seuil de la condition, dans l'unité de son type (story 6.3) ; sans objet pour
+## `EVENT_TRIGGER_GAME_START`.
+func get_event_trigger_value(event_id: String) -> float:
+	return _events.get_event_trigger_value(event_id)
+
+
+## Nom affiché de l'événement (`nom_affiche`), titre de son entrée au journal
+## (story 6.5).
+func get_event_name(event_id: String) -> String:
+	return _events.get_event_name(event_id)
+
+
+## Nom affiché du locuteur de l'événement, déclaré dans `locuteurs` (story 6.2).
+func get_event_speaker_name(event_id: String) -> String:
+	return _events.get_event_speaker_name(event_id)
+
+
+## Lignes de dialogue de l'événement, dans l'ordre, jamais vides (story 6.2).
+func get_event_lines(event_id: String) -> PackedStringArray:
+	return _events.get_event_lines(event_id)
+
+
+# --- Alerte « anomalie proche » -----------------------------------------------
+# Lue par `AnomalyDetector` (story 6.4, `Q71` (a)) : bloc `alerte_anomalie_proche`
+# de `data/events.json`, validé au chargement contre l'événement qu'il désigne.
+
+## Vrai si le bloc d'alerte a été accepté : rayon d'alerte strictement supérieur
+## au rayon de déclenchement de l'événement désigné.
+func has_anomaly_alert() -> bool:
+	return _events.has_anomaly_alert()
+
+
+## Événement de proximité dont l'alerte annonce l'approche : l'alerte se tait
+## dès que son flag est posé.
+func get_anomaly_alert_event_id() -> String:
+	return _events.get_anomaly_alert_event_id()
+
+
+## Rayon d'alerte, en mètres, mesuré comme le rayon de déclenchement : du centre
+## de la foreuse au centre de la cellule d'ancrage.
+func get_anomaly_alert_radius_m() -> float:
+	return _events.get_anomaly_alert_radius_m()
+
+
+## Marge de sortie, en mètres, au-delà du rayon d'alerte.
+func get_anomaly_alert_exit_margin_m() -> float:
+	return _events.get_anomaly_alert_exit_margin_m()

@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://cgk1qkth6tv88"]
+
+[ext_resource type="Script" uid="uid://dqsmlcnd0ts4e" path="res://scripts/systems/AnomalyDetector.gd" id="1_detector"]
+[ext_resource type="AudioStream" uid="uid://chwod5r1q1kax" path="res://assets/audio/sfx_alert_anomaly_near.wav" id="2_sound"]
+
+[node name="AnomalyDetector" type="Node"]
+script = ExtResource("1_detector")
+
+[node name="AlertAudio" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_sound")

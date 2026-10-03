@@ -589,6 +589,17 @@ func get_anomaly_cell() -> Vector2i:
 	return Vector2i(_anchors[KEY_ANOMALY_COLUMN], _anchors[KEY_ANOMALY_ROW])
 
 
+## Centre de la cellule de l'anomalie en pixels monde (story 6.3) : mêmes
+## conventions que `get_spawn_ground_position()` — colonne 0 = `[0, tuile[`,
+## rangée 0 juste sous la ligne de surface (`y = 0`).
+func get_anomaly_center_position() -> Vector2:
+	if not has_anchors():
+		push_error("GameData — ancrage de l'anomalie indisponible (voir %s)." % PATH)
+		return Vector2.ZERO
+	var tile: float = _get_tile_size()
+	return (Vector2(get_anomaly_cell()) + Vector2(0.5, 0.5)) * tile
+
+
 ## Taille d'une tuile en pixels : 1 tuile = 1 m (story 3.1), donc `pixels_par_metre`.
 func _get_tile_size() -> float:
 	return _drill.get_physics_value(DrillSettings.KEY_PIXELS_PER_METER)

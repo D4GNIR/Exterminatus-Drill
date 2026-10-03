@@ -1,17 +1,48 @@
 {
   "schema_version": 1,
-  "commentaire": "Catalogue narratif (CDC section « Scenario »). Story 1.5 : structure posee et exercee par le chargeur ; le contenu est ecrit en phase 6 (stories 6.2 a 6.4). `condition_declenchement.type` designe la nature de la condition, `valeur` son seuil. `flag` est l'identifiant du drapeau pose dans GameState : il porte a lui seul l'unicite du declenchement (un evenement dont le flag est deja pose ne se rejoue pas), aucun champ supplementaire n'est necessaire. `locuteur` est l'emetteur radio par defaut des lignes de l'evenement.",
+  "commentaire": "Catalogue narratif (CDC section « Scenario »). Story 1.5 : structure posee et exercee par le chargeur ; le contenu est ecrit en phase 6 (stories 6.2 a 6.4). `condition_declenchement.type` designe la nature de la condition, `valeur` son seuil. `flag` est l'identifiant du drapeau pose dans GameState : il porte a lui seul l'unicite du declenchement (un evenement dont le flag est deja pose ne se rejoue pas), aucun champ supplementaire n'est necessaire ; deux evenements ne partagent jamais un flag. `locuteur` est l'emetteur radio par defaut des lignes de l'evenement. Story 6.3 (NarrativeSystem, arbitrage Q71 (a)) : `types_condition` declare les types de condition en usage, chacun EVALUE par NarrativeSystem ; un type non declare ici, ou declare sans etre evalue par le code, est rejete au chargement avec les evenements qui l'emploient. Types evalues : `proximite_anomalie_m` (valeur = rayon de declenchement, en metres, > 0, mesure du centre de la foreuse au centre de la cellule d'ancrage de l'anomalie du bloc `ancrages` de data/generation.json ; la foreuse doit etre strictement a moins de ce rayon ; 1 m = 1 tuile) ; `debut_partie` (SANS valeur : remplie des la premiere evaluation de la partie, le flag seul empechant le rejeu ; condition du prologue, story 6.2). Seuls les evenements `actif_mvp: true` sont evalues. Story 6.4 (anomalie scenarisee, arbitrages Q71 (a), Q75 (a), Q79) : `anomalie_necropole` se declenche par PROXIMITE DE L'ANCRAGE (`proximite_anomalie_m`, rayon de declenchement de 3 m) et non plus a 200 m de profondeur (seuil incoherent avec l'ancrage a 305,5 m, colonne 23) ; le type `profondeur_min_m`, sans plus aucun evenement consommateur, est retire de `types_condition` ET du code (B6) : le declarer de nouveau le fait rejeter au chargement. Nom affiche « Signal de la nécropole » (accent, Q79) ; `id`, `flag` et lignes inchanges (Q75 (a)) — « nécropole » designe la structure pre-imperiale enfouie, non la zone. Le bloc `alerte_anomalie_proche` porte l'alerte « anomalie proche » (CDC « Direction sonore ») : `evenement` = `id` de l'evenement de proximite dont l'alerte annonce l'approche (actif au MVP, de type `proximite_anomalie_m`) ; `rayon_m` = rayon d'alerte, en metres, mesure comme le rayon de declenchement (centre de la foreuse → centre de la cellule d'ancrage, 1 m = 1 tuile), STRICTEMENT superieur au rayon de declenchement de cet evenement — sinon le bloc est rejete au chargement et l'alerte desactivee ; `marge_sortie_m` = marge, en metres, > 0, dont la foreuse doit s'eloigner AU-DELA du rayon d'alerte pour que l'alerte s'eteigne (une foreuse qui oscille au bord ne la rejoue pas a chaque image). L'alerte n'est donnee que tant que le flag de l'evenement n'est pas pose : une fois l'anomalie decouverte, elle se tait. Elle n'inflige aucun effet ni degat (Q16 : ce n'est pas l'« Anomalie Warp » des « Dangers », hors MVP). Rayons de depart a regler au playtest 7.6 sans toucher au code. Story 6.2 (Dialogue, arbitrage Q72 (a)) : `locuteurs` declare les emetteurs radio (CDC « Scenario », « Direction sonore ») — `id` reference par le champ `locuteur` d'un evenement, `nom_affiche` montre a l'ecran au-dessus des lignes ; un evenement dont le locuteur n'est pas declare ici est rejete au chargement. `lignes_de_dialogue` : lues une par une, dans l'ordre, par le dialogue modal ; une ligne vide est ignoree, un evenement sans ligne est rejete. L'evenement `prologue` (condition `debut_partie`) porte le texte du prologue du CDC principal, a l'identique, decoupe en phrases ; `id` et `flag` sont des identifiants persistes par la sauvegarde (story 7.1) : ne pas les renommer.",
   "types_condition": [
-    "profondeur_min_m"
+    "proximite_anomalie_m",
+    "debut_partie"
+  ],
+  "alerte_anomalie_proche": {
+    "evenement": "anomalie_necropole",
+    "rayon_m": 15.0,
+    "marge_sortie_m": 1.0
+  },
+  "locuteurs": [
+    {
+      "id": "commissaire",
+      "nom_affiche": "Commissaire"
+    },
+    {
+      "id": "tech_pretre",
+      "nom_affiche": "Tech-Prêtre"
+    }
   ],
   "evenements": [
     {
-      "id": "anomalie_necropole",
-      "nom_affiche": "Signal de la necropole",
+      "id": "prologue",
+      "nom_affiche": "Prologue",
       "actif_mvp": true,
       "condition_declenchement": {
-        "type": "profondeur_min_m",
-        "valeur": 200
+        "type": "debut_partie"
+      },
+      "flag": "prologue_transmis",
+      "locuteur": "commissaire",
+      "lignes_de_dialogue": [
+        "Condamné, ta dette envers l'Humanité ne peut être remboursée que par le labeur.",
+        "Ta foreuse est ta cellule, ton quota est ta prière, et les profondeurs seront ton jugement.",
+        "Extrais. Livre. Survis."
+      ]
+    },
+    {
+      "id": "anomalie_necropole",
+      "nom_affiche": "Signal de la nécropole",
+      "actif_mvp": true,
+      "condition_declenchement": {
+        "type": "proximite_anomalie_m",
+        "valeur": 3.0
       },
       "flag": "anomalie_necropole_decouverte",
       "locuteur": "tech_pretre",

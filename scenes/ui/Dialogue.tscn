@@ -1,0 +1,108 @@
+[gd_scene format=3 uid="uid://dbxcxrcmxjccr"]
+
+[ext_resource type="Theme" uid="uid://cof0fr65aer6v" path="res://scenes/ui/UiTheme.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://bappq1bhyawd" path="res://scripts/ui/Dialogue.gd" id="2_dialogue"]
+
+[node name="Dialogue" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_dialogue")
+
+[node name="Backdrop" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"ModalBackdrop"
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Frame" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(640, 0)
+layout_mode = 2
+
+[node name="Rows" type="VBoxContainer" parent="Center/Frame"]
+layout_mode = 2
+theme_type_variation = &"ModalRows"
+
+[node name="HeaderRow" type="HBoxContainer" parent="Center/Frame/Rows"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Channel" type="Label" parent="Center/Frame/Rows/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"HudCaption"
+text = "TRANSMISSION RADIO"
+
+[node name="Progress" type="Label" parent="Center/Frame/Rows/HeaderRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+horizontal_alignment = 2
+
+[node name="Speaker" type="Label" parent="Center/Frame/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"ModalTitle"
+
+[node name="Line" type="Label" parent="Center/Frame/Rows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="HintRow" type="HBoxContainer" parent="Center/Frame/Rows"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"ModalColumns"
+alignment = 2
+
+[node name="NextHint" type="HBoxContainer" parent="Center/Frame/Rows/HintRow"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="NextKey" type="Label" parent="Center/Frame/Rows/HintRow/NextHint"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HintKey"
+
+[node name="NextCaption" type="Label" parent="Center/Frame/Rows/HintRow/NextHint"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Suivant"
+
+[node name="LastCaption" type="Label" parent="Center/Frame/Rows/HintRow/NextHint"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "Fin de transmission"
+
+[node name="SkipHint" type="HBoxContainer" parent="Center/Frame/Rows/HintRow"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+
+[node name="SkipKey" type="Label" parent="Center/Frame/Rows/HintRow/SkipHint"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HintKey"
+
+[node name="SkipCaption" type="Label" parent="Center/Frame/Rows/HintRow/SkipHint"]
+layout_mode = 2
+text = "Couper la transmission"

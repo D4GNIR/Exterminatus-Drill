@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://cx3w14usfyjx3"]
+
+[ext_resource type="Script" uid="uid://dn1fli3k14hjw" path="res://scripts/systems/AnomalyMarker.gd" id="1_marker"]
+[ext_resource type="Texture2D" uid="uid://vk4c1h7vkjtg" path="res://assets/sprites/prop_anomaly_necropolis.png" id="2_texture"]
+
+[node name="AnomalyMarker" type="Node2D"]
+script = ExtResource("1_marker")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_texture")

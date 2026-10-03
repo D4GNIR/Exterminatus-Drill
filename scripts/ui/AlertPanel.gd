@@ -44,6 +44,13 @@ class_name AlertPanel
 ## sèche), le retour en surface, **chaque ressource perdue et sa quantité** — ou
 ## qu'aucune n'est perdue — et ce qui est conservé. Jamais une perte silencieuse
 ## (même exigence que `G10`). Noms de ressources lus en données (`D3`).
+## [br]— **Anomalie proche** (story 6.4, CDC « Direction sonore ») : bandeau
+## persistant `AnomalyNearAlert`, montré sur `AnomalyDetector.anomaly_near` et
+## caché sur `anomaly_near_cleared` ; le détecteur, injecté par le HUD
+## (`bind_anomaly()`), détient rayon et son, ce panneau n'en connaît rien
+## (`D1`). **Aucun chiffre** : ni distance, ni rayon (`M5`). Teinte verte
+## propre (`AlertTagAnomaly`, `AlertAnomalyLabel` du thème), distincte des
+## alertes rouges de bord et du message de rencontre hostile (`6.6`).
 ## [br]— **Validation headless** : ce fichier référence l'autoload `GameData` —
 ## faux « Identifier not found » hors exécution du projet, exception `1.9`/`2.9`.
 
@@ -74,6 +81,7 @@ const RECOVERY_LINE_SEPARATOR: String = ", "
 @onready var _fuel_depleted_alert: Control = %FuelDepletedAlert
 @onready var _armor_low_alert: Control = %ArmorLowAlert
 @onready var _cargo_full_alert: Control = %CargoFullAlert
+@onready var _anomaly_near_alert: Control = %AnomalyNearAlert
 @onready var _loss_counter: Label = %LossCounter
 @onready var _messages: VBoxContainer = %Messages
 
@@ -83,6 +91,7 @@ var _cargo_system: CargoSystem
 var _drill_system: MiningSystem
 var _threat_system: ThreatSystem
 var _recovery_system: RecoverySystem
+var _anomaly_detector: AnomalyDetector
 var _message_duration: float = 0.0
 var _message_max: int = 0
 
@@ -125,6 +134,15 @@ func bind(rig: DrillRig) -> void:
 	_show_loss_counter(_cargo_system.get_lost_units())
 
 
+## Branche le bandeau « anomalie proche » sur le détecteur (story 6.4), puis
+## affiche son état **en cours**.
+func bind_anomaly(detector: AnomalyDetector) -> void:
+	_anomaly_detector = detector
+	_anomaly_detector.anomaly_near.connect(_on_anomaly_near)
+	_anomaly_detector.anomaly_near_cleared.connect(_on_anomaly_near_cleared)
+	_anomaly_near_alert.visible = _anomaly_detector.is_anomaly_near()
+
+
 ## Les composants peuvent survivre au HUD (et `CargoSystem`, objet partagé, lui
 ## survit toujours) : sans déconnexion, un rechargement de scène laisserait des
 ## connexions vers un panneau libéré.
@@ -147,6 +165,9 @@ func _exit_tree() -> void:
 		_threat_system.threat_encountered.disconnect(_on_threat_encountered)
 	if _recovery_system != null:
 		_recovery_system.recovered.disconnect(_on_recovered)
+	if is_instance_valid(_anomaly_detector):
+		_anomaly_detector.anomaly_near.disconnect(_on_anomaly_near)
+		_anomaly_detector.anomaly_near_cleared.disconnect(_on_anomaly_near_cleared)
 	if GameState.depth_layer_changed.is_connected(_on_depth_layer_changed):
 		GameState.depth_layer_changed.disconnect(_on_depth_layer_changed)
 
@@ -194,6 +215,14 @@ func _on_cargo_full() -> void:
 
 func _on_cargo_full_cleared() -> void:
 	_cargo_full_alert.visible = false
+
+
+func _on_anomaly_near() -> void:
+	_anomaly_near_alert.visible = true
+
+
+func _on_anomaly_near_cleared() -> void:
+	_anomaly_near_alert.visible = false
 
 
 # --- Messages transitoires ----------------------------------------------------
