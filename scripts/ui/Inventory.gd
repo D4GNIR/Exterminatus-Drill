@@ -18,6 +18,9 @@ extends Control
 ## `toggle_inventory` (répétition et relâchement de la touche qui l'a refermé).
 ## L'inventaire ne contient **aucun contrôle focalisable** : `Tab`
 ## (`ui_focus_next`) n'a rien à parcourir et ne déplace aucun focus.
+## [br]— **Jamais pendant la transition de destruction** (story 6.7, `M4`) :
+## l'inventaire ne s'ouvre pas tant que `GameState.is_drill_operational()` est
+## faux ; la pause, elle, reste disponible (`H4`).
 ## [br]— **Une seule modale à la fois** (protocole `UiModal`) : l'inventaire ne
 ## s'ouvre pas si une autre modale l'est ; ouvert, il se referme sur l'action
 ## `pause`, que le menu pause lui laisse, et rend la main au jeu. La pause est
@@ -57,7 +60,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed(ACTION_TOGGLE, false):
-		if UiModal.is_other_open(self):
+		if UiModal.is_other_open(self) or not GameState.is_drill_operational():
 			return
 		_open()
 	if event.is_action(ACTION_TOGGLE):

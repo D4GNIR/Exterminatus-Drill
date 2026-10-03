@@ -76,6 +76,16 @@ Tous les sons de `audio/` sont des **placeholders générés par un agent** (`go
 échantillon tiers, au format `.wav` PCM 16 bits mono 22 050 Hz. Ceux de la story `4.2` sont une
 synthèse procédurale (sinus, carré, dents de scie, bruit filtré) écrite en Python standard
 (`wave`, `math`) ; la méthode exacte de ceux de `3.7` n'a pas été consignée à l'époque (`Q34`).
+Celui de la story `6.6` (arbitrage `Q69` (a), 2026-10-02) suit la même méthode que ceux de `4.2` :
+synthèse procédurale en Python standard (`wave`, `math`, `random` à graine fixe), même format.
+Les trois **ambiances de palier** de la story `6.8` (arbitrage `Q69` (a), générées le 2026-10-03) sont
+synthétisées en Python avec **numpy** (graine fixe 68), même format : **boucles parfaites de 12 s** (toutes
+les fréquences, vibratos et houles font un nombre entier de cycles sur la durée, bruit filtré par FFT
+circulaire), importées en boucle (`edit/loop_mode=2`, Forward, dans leur `.import`). Les voix des
+« chœurs graves » (CDC « Direction sonore ») sont des harmoniques d'une fondamentale grave pondérées par
+des formants de voyelle sombre, plusieurs voix légèrement désaccordées. Le flux de chaque palier est
+désigné par son chemin dans `data/generation.json` (bloc `indicateur_danger`) : remplacer le fichier sous
+le même nom, ou changer ce chemin, suffit. Le premier palier n'a volontairement **aucune** ambiance.
 **Aucune licence tierce** : œuvres originales du projet. Ils sont **substituables sans toucher au code** :
 remplacer le fichier sous le même nom suffit (le flux est référencé par la scène, jamais par un
 chemin dans un script). Le script générateur n'est pas versionné (outil jetable, hors dépôt).
@@ -89,6 +99,10 @@ chemin dans un script). Le script générateur n'est pas versionné (outil jetab
 | `sfx_alert_armor_low.wav` | `4.2` · `Q45` | Blindage faible | Klaxon : trois impulsions dents de scie à deux voix battantes (220 + 233 Hz), 0,48 s |
 | `sfx_alert_cargo_full.wav` | `4.2` · `Q45` | Soute pleine | Deux coups de cloche métallique (partiels inharmoniques), grave puis aigu, 0,64 s |
 | `sfx_drill_refused.wav` | `4.2` · `Q45` | Forage refusé | Choc sourd et bref (sinus 110 Hz + bruit filtré), 0,16 s |
+| `sfx_threat_encounter.wav` | `6.6` · `Q69` (a) — généré le 2026-10-02 | Rencontre hostile (courbe de risque §4.2), joué par `DrillFeedback.tscn` (`ThreatAudio`) | Choc grave (sinus 95 → 45 Hz) et gravats (bruit filtré bref), puis cri strident en dents de scie 1150 → 620 Hz à vibrato, 0,62 s |
+| `amb_depth_necropolis.wav` | `6.8` · `Q69` (a) — généré le 2026-10-03 | Ambiance du palier 2 « Nécropole oubliée » (indicateur de danger, `DangerIndicator.tscn`), boucle | Drone grave battant (41 / 41,5 Hz) et harmoniques, vent souterrain (bruit filtré à houle lente), coups sourds de pierre et de métal toutes les 4 s, 12 s |
+| `amb_depth_entrails_choir.wav` | `6.8` · `Q69` (a) — généré le 2026-10-03 | Ambiance du palier 3 « Entrailles hérétiques », boucle | **Chœur grave** en voyelle « ou » (ré 2 + la 2, quinte à vide, trois voix par note), houle lente, drone à l'octave inférieure et souffle sourd, 12 s |
+| `amb_depth_core_choir.wav` | `6.8` · `Q69` (a) — généré le 2026-10-03 | Ambiance du palier 4 « Cœur de Gehenna-7 », boucle | **Chœur grave dissonant** en voyelle « a » (ré 2, mi♭ 2, sol♯ 2 : seconde mineure et triton), grondement sismique, battement lent oppressant à 0,75 Hz, 12 s |
 
 Le bip de **destruction** reste le flux embarqué de `DrillRig.tscn` (sous-ressource
 `AudioStreamWAV_alert`, story `2.3`). Reconnaissance à l'oreille et confort à la répétition :

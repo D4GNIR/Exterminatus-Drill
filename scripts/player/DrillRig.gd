@@ -35,6 +35,10 @@ class_name DrillRig
 ## injection de scène (`Q38`) et s'abonne aux signaux de ses composants, qu'il
 ## obtient par les accesseurs `get_*_system()` ci-dessous.
 
+## Émis après un rapatriement au point d'apparition (story 6.7) : la position a
+## sauté sans déplacement physique. `CameraSystem` s'y recale sans travelling.
+signal relocated()
+
 # --- Actions de l'Input Map ---------------------------------------------------
 # Les noms des 12 actions du CDC (story 1.3). Ce sont des identifiants d'Input
 # Map, jamais des touches : la disposition clavier reste réglable par le joueur
@@ -101,6 +105,15 @@ var _pixels_per_meter: float = 0.0
 ## figé à 11 nœuds (story 2.1). **Public en lecture** : ses signaux `cargo_full`,
 ## `ore_lost` et son compteur de perte sont destinés au HUD de la story 4.2 (`G10`).
 var cargo_system: CargoSystem = CargoSystem.new()
+## Courbe de risque (story 6.6). Objet et non nœud, pour la même raison ; la
+## logique de menace vit dans `ThreatSystem`, la foreuse ne fait que le brancher.
+## **Public en lecture** : son signal `threat_encountered` est destiné au HUD.
+var threat_system: ThreatSystem = ThreatSystem.new()
+## Conséquence des échecs (story 6.7). Objet et non nœud, pour la même raison ;
+## la règle (déclencheurs, perte, retour) vit dans `RecoverySystem`, la foreuse
+## ne fait que le brancher, avancer son délai et se replacer sur `recovered`.
+## **Public en lecture** : son signal `recovered` est destiné au HUD.
+var recovery_system: RecoverySystem = RecoverySystem.new()
 @onready var _alert_audio: AudioStreamPlayer2D = $Audio/AlertAudio
 @onready var _drill_audio: AudioStreamPlayer2D = $Audio/DrillAudio
 @onready var _collision_shape: CollisionShape2D = $CollisionShape2D
@@ -154,6 +167,8 @@ func _ready() -> void:
 	_armor_system.destruction_finished.connect(_on_destruction_finished)
 	_check_alert_sounds()
 	_setup_drilling()
+	if recovery_system.setup(_fuel_system, _armor_system, cargo_system):
+		recovery_system.recovered.connect(_on_recovered)
 	_world_bounds = GameData.get_world_bounds()
 	_half_extents = _read_half_extents()
 	_place_at_spawn()
@@ -235,6 +250,9 @@ func _physics_process(delta: float) -> void:
 		_armor_system.apply_impact(impact_speed)
 	_was_grounded = grounded
 	_publish_state()
+	# Après la publication : le délai de panne sèche juge la zone de surface de
+	# cette image (story 6.7).
+	recovery_system.tick(delta)
 
 
 ## Déplacement horizontal. `Input.get_axis()` soustrait les deux forces d'action :
@@ -334,6 +352,11 @@ func _setup_drilling() -> void:
 	if cargo_system.setup():
 		_drill_system.tile_drilled.connect(_on_tile_drilled)
 		cargo_system.cargo_full.connect(_on_cargo_full)
+	# Branché **après** la soute : la tuile est collectée avant que la menace ne
+	# frappe, ce que la perte de cargo de la story 6.7 suppose.
+	if threat_system.setup(_armor_system):
+		_drill_system.tile_drilled.connect(threat_system.on_tile_drilled)
+		feedback.bind_threats(threat_system)
 
 
 ## Le forage commence : la soute est consultée **avant** la destruction, pour que
@@ -417,10 +440,25 @@ func _on_destruction_started() -> void:
 
 
 ## Sortie de destruction : l'alerte se tait, le pilotage reprend du seul fait que
-## `can_act()` redevient vrai. Rien d'autre à défaire — l'état de destruction n'a
-## touché aucune donnée persistante.
+## `can_act()` redevient vrai. La conséquence (perte, retour) suit dans le même
+## appel, par `RecoverySystem.recovered` (story 6.7).
 func _on_destruction_finished() -> void:
 	_alert_audio.stop()
+
+
+## Rapatriement (story 6.7, critère 4) : la foreuse est replacée au point
+## d'apparition dérivé des ancrages (`K3`), vitesse nulle, posée au sol, forage
+## et alignement abandonnés ; l'état est republié à la même image et la caméra
+## se recale (`relocated`). La perte, le blindage et le carburant sont déjà
+## traités par `RecoverySystem` : ici, seulement la position.
+func _on_recovered(_cause: RecoverySystem.Cause, _lost: Dictionary[String, int]) -> void:
+	_aligning = false
+	_drill_audio.stop()
+	_place_at_spawn()
+	# Posée : l'image suivante ne doit pas compter un « atterrissage ».
+	_was_grounded = true
+	_publish_state()
+	relocated.emit()
 
 
 ## Change le flux du lecteur d'alerte puis le joue : un son interrompt le
@@ -441,3 +479,4 @@ func _publish_state() -> void:
 	GameState.set_drill_position(global_position)
 	GameState.set_depth_m(maxf(global_position.y, 0.0) / _pixels_per_meter)
 	GameState.set_in_surface_zone(_surface_zone.has_point(global_position))
+	GameState.set_drill_operational(_armor_system.can_act())

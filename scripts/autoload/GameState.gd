@@ -48,10 +48,20 @@ signal credits_changed(credits: int)
 signal cargo_changed(used: int, capacity: int)
 ## Émis à chaque variation de la profondeur courante, en mètres.
 signal depth_changed(depth_m: float)
+## Émis **à la seule transition** de palier de profondeur (story 6.1), jamais à
+## chaque image : `layer_id` est un `id` de `couches_profondeur`
+## (`data/generation.json`), le découpage unique du loot et de la courbe de
+## risque (`Q30`). Source commune de la courbe de risque (6.6), de l'indicateur de
+## danger (6.8) et du contexte de l'anomalie (6.4).
+signal depth_layer_changed(layer_id: String)
 ## Émis quand la foreuse entre dans la zone de surface ou en sort (story 5.1) :
 ## la station n'est accessible que dans cette zone, et le HUD y affiche son
 ## indication d'interaction.
 signal surface_zone_changed(in_zone: bool)
+## Émis quand la foreuse cesse d'être opérationnelle (entrée dans la transition
+## de destruction) ou le redevient (story 6.7, `M4`) : la station, l'inventaire
+## et l'indication d'interaction ne s'ouvrent pas pendant la transition.
+signal drill_operational_changed(operational: bool)
 ## Émis après l'achat d'une amélioration (« la statistique associée est modifiée
 ## immédiatement », critères d'acceptation MVP). Story 5.5 : chaque système
 ## propriétaire d'une statistique s'y abonne et applique lui-même la valeur du
@@ -87,6 +97,11 @@ var _credits: int = 0
 ## vers le bas. La conversion pixels → mètres dépend de la taille de tuile : elle
 ## appartient au système qui la connaît (phases 2 et 3), pas à l'état.
 var _depth_m: float = 0.0
+## Palier de profondeur courant : un `id` de `couches_profondeur`, jamais une
+## borne. **Dérivé** de `_depth_m` à chaque publication de la profondeur, avec
+## l'hystérésis lue en données (`GameData.get_depth_layer_with_hysteresis()`) :
+## aucun second calcul de profondeur, aucun seuil ici (story 6.1, `C3`, `D1`).
+var _depth_layer_id: String = ""
 ## Position monde de la foreuse en **pixels**, décomposée en deux `float` pour
 ## rester sérialisable en JSON. Distincte de la profondeur : la profondeur est
 ## une grandeur d'affichage, la position sert à restituer la partie (phase 7).
@@ -96,6 +111,11 @@ var _drill_position_y: float = 0.0
 ## de la position et des ancrages, publiée par la foreuse comme la profondeur :
 ## l'état ne sait pas où est la zone, il retient seulement la réponse.
 var _in_surface_zone: bool = false
+## La foreuse est-elle opérationnelle — hors transition de destruction (story
+## 6.7) ? Grandeur **dérivée** de `ArmorSystem.can_act()`, publiée par la foreuse
+## comme la zone de surface. État **transitoire**, à ne pas sauvegarder (`7.1`) :
+## une partie restaurée repart opérationnelle.
+var _drill_operational: bool = true
 ## Contenu de la soute : `resource_id` → nombre d'unités. Les `resource_id` sont
 ## ceux de `data/resources.json` (story 1.5) ; aucune valeur de vente n'est
 ## stockée ici.
@@ -134,11 +154,18 @@ func reset_new_game() -> void:
 	_credits = maxi(GameData.get_start_credits(), 0)
 	# La surface est l'origine de la mesure : 0 m n'est pas un réglage.
 	_depth_m = 0.0
+	# Surface ⇒ premier palier : la profondeur nulle y appartient par construction
+	# des données (paliers contigus depuis 0 m). Pas d'hystérésis au départ d'une
+	# partie : le palier précédent n'a pas de sens pour une partie neuve.
+	var start_layer_id: String = GameData.get_depth_layer_at(_depth_m)
+	var layer_changed: bool = start_layer_id != _depth_layer_id
+	_depth_layer_id = start_layer_id
 	_drill_position_x = 0.0
 	_drill_position_y = 0.0
 	# Recalculée par la foreuse à sa prochaine publication : l'état de départ
 	# n'affirme rien sur une position qu'il ne connaît pas encore.
 	_in_surface_zone = false
+	_drill_operational = true
 	_cargo.clear()
 	_cargo_used = 0
 	_cargo_capacity = maxi(int(GameData.get_start_stat(GameData.STAT_CARGO_CAPACITY)), MIN_CARGO_CAPACITY)
@@ -152,7 +179,11 @@ func reset_new_game() -> void:
 	credits_changed.emit(_credits)
 	cargo_changed.emit(_cargo_used, _cargo_capacity)
 	depth_changed.emit(_depth_m)
+	# Signal de transition : émis seulement si la nouvelle partie change de palier.
+	if layer_changed:
+		depth_layer_changed.emit(_depth_layer_id)
 	surface_zone_changed.emit(_in_surface_zone)
+	drill_operational_changed.emit(_drill_operational)
 	for upgrade_id: String in _upgrade_levels:
 		upgrade_level_changed.emit(upgrade_id, _upgrade_levels[upgrade_id])
 
@@ -316,6 +347,22 @@ func set_depth_m(value: float) -> void:
 		return
 	_depth_m = clamped
 	depth_changed.emit(_depth_m)
+	_update_depth_layer()
+
+
+func get_depth_layer_id() -> String:
+	return _depth_layer_id
+
+
+## Retient le palier de la profondeur publiée et n'émet qu'à la transition. La
+## règle (frontières, hystérésis) est une donnée lue par `GameData` ; l'état ne
+## fait que retenir la réponse, comme pour la zone de surface.
+func _update_depth_layer() -> void:
+	var layer_id: String = GameData.get_depth_layer_with_hysteresis(_depth_m, _depth_layer_id)
+	if layer_id == _depth_layer_id:
+		return
+	_depth_layer_id = layer_id
+	depth_layer_changed.emit(_depth_layer_id)
 
 
 ## Conversion `Vector2` → deux `float` : l'état reste sérialisable en JSON alors
@@ -339,6 +386,18 @@ func set_in_surface_zone(value: bool) -> void:
 		return
 	_in_surface_zone = value
 	surface_zone_changed.emit(_in_surface_zone)
+
+
+func is_drill_operational() -> bool:
+	return _drill_operational
+
+
+## Notifie seulement les changements : la foreuse publie à chaque image.
+func set_drill_operational(value: bool) -> void:
+	if value == _drill_operational:
+		return
+	_drill_operational = value
+	drill_operational_changed.emit(_drill_operational)
 
 
 # --- Améliorations ------------------------------------------------------------

@@ -68,6 +68,15 @@ func _ready() -> void:
 	# serait un travelling depuis l'origine, que l'amortissement rendrait lent.
 	global_position = _target.global_position
 	reset_smoothing()
+	# Story 6.7 : un rapatriement est un saut de position, pas un déplacement —
+	# l'amortissement en ferait un long travelling depuis le lieu de l'échec.
+	if _target is DrillRig:
+		(_target as DrillRig).relocated.connect(_on_target_relocated)
+
+
+func _on_target_relocated() -> void:
+	global_position = _target.global_position
+	reset_smoothing()
 
 
 func _physics_process(_delta: float) -> void:

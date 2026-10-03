@@ -13,7 +13,7 @@
     {
       "id": "soute",
       "nom_affiche": "Soute",
-      "description": "Capacite de stockage du minerai extrait, en unites de masse.",
+      "description": "Capacité de stockage du minerai extrait, en unités de masse.",
       "statistique": "capacite_soute",
       "actif_mvp": true,
       "valeur_depart": 50,
@@ -23,8 +23,8 @@
     },
     {
       "id": "reacteur",
-      "nom_affiche": "Reacteur",
-      "description": "Capacite maximale du reservoir de carburant.",
+      "nom_affiche": "Réacteur",
+      "description": "Capacité maximale du réservoir de carburant.",
       "statistique": "carburant_max",
       "actif_mvp": true,
       "valeur_depart": 100,
@@ -35,7 +35,7 @@
     {
       "id": "foret",
       "nom_affiche": "Foret",
-      "description": "Puissance du foret. Une tuile n'est detruite que si la puissance atteint sa durete (`hardness`).",
+      "description": "Puissance du foret. Une roche ne cède que si cette puissance atteint sa dureté.",
       "statistique": "puissance_foret",
       "actif_mvp": true,
       "valeur_depart": 2,
@@ -46,7 +46,7 @@
     {
       "id": "blindage",
       "nom_affiche": "Blindage",
-      "description": "Points de structure de la foreuse. Chaque niveau augmente la capacite maximale de la jauge ; les degats d'une chute ou d'un impact restent les memes, la meme chute entame donc une part plus faible de la jauge.",
+      "description": "Points de structure de la foreuse. Chaque niveau augmente la capacité maximale de la jauge ; les dégâts d'une chute ou d'un impact restent les mêmes, la même chute entame donc une part plus faible de la jauge.",
       "statistique": "blindage_max",
       "actif_mvp": true,
       "valeur_depart": 100,

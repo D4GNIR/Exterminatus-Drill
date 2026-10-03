@@ -35,6 +35,14 @@ class_name CargoSystem
 ## valeur du nouveau niveau de l'amélioration qui pilote `capacite_soute`
 ## (`GameData.get_upgrade_value()`, fonction de `5.6`), à la même image. Le
 ## contenu n'est pas touché ; le réarmement de l'alerte suit par `cargo_changed`.
+## [br]— **Perte à l'échec** (story 6.7, §4.3 de l'amendement, `M3 [B]`) :
+## `lose_fraction()` retire une **fraction** de la soute après une destruction ou
+## une panne sèche hors zone de surface — c'est encore une règle de soute, donc
+## ici ; la **décision** de la déclencher appartient à `RecoverySystem`. La perte
+## n'est **jamais totale** (règle d'arrondi ci-dessous), ne tire **aucun** nombre
+## aléatoire (`K2`, `M6`) et ne touche à rien d'autre que la soute. Elle ne
+## compte pas dans `get_lost_units()`, réservé à la soute pleine (`Q5`, `G10`) :
+## elle est signalée par le rapatriement lui-même.
 ##
 ## **Validation headless** : ce fichier référence les autoloads `GameData` et
 ## `GameState` — faux « Identifier not found » en `--check-only`, exception `1.9`.
@@ -138,6 +146,81 @@ func on_tile_drilled(resource_id: String) -> void:
 	# perte suive ou non.
 	if GameState.get_cargo_free_space() < _smallest_mass:
 		_alert_full()
+
+
+## Story 6.7 — retire `fraction` (dans `]0, 1[`, donnée validée au chargement) de
+## la soute et rend les unités perdues par ressource, dans l'ordre du catalogue.
+## Règle, opposable à l'audit (`M3 [B]`) :
+## [br]— **On perd des tuiles entières** : la soute ne reçoit que des tuiles
+## entières (« tout ou rien »), elle n'en perd pas de fraction. Une ressource de
+## `u` unités et de masse `m` compte `u ÷ m` tuiles (division entière).
+## [br]— **Combien** : sur `T` tuiles, `L = max(1, ⌊T × fraction⌋)` tuiles perdues
+## si `T ≥ 2` ; **aucune** si `T ≤ 1`. Comme `fraction < 1`, `⌊T × fraction⌋ ≤ T − 1`
+## : il reste **toujours au moins une tuile**, la perte n'est jamais totale ; une
+## soute d'une seule tuile ne perd rien.
+## [br]— **Lesquelles** : répartition proportionnelle au nombre de tuiles de
+## chaque ressource, par la méthode des **plus forts restes**, en arithmétique
+## entière : chaque ressource perd `⌊tuiles × L ÷ T⌋`, puis les tuiles restantes
+## vont aux plus forts restes, à égalité dans l'ordre de `data/resources.json`.
+## Une ressource ne perd jamais plus de tuiles qu'elle n'en a. Déterministe, sans
+## aucun RNG.
+## [br]— Une ressource inconnue du catalogue ou de masse non positive n'est ni
+## comptée ni retirée (sa vente est refusée par `EconomySystem`, `D2`).
+func lose_fraction(fraction: float) -> Dictionary[String, int]:
+	var lost: Dictionary[String, int] = {}
+	var tiles: Dictionary[String, int] = _cargo_tiles()
+	var total: int = 0
+	for resource_id: String in tiles:
+		total += tiles[resource_id]
+	if total <= 1 or fraction <= 0.0 or fraction >= 1.0:
+		return lost
+	var to_lose: int = maxi(1, floori(float(total) * fraction))
+	var lost_tiles: Dictionary[String, int] = _apportion(tiles, total, to_lose)
+	for resource_id: String in lost_tiles:
+		var units: int = lost_tiles[resource_id] * GameData.get_resource_mass(resource_id)
+		GameState.set_cargo_units(resource_id, GameState.get_cargo_units(resource_id) - units)
+		lost[resource_id] = units
+	return lost
+
+
+## Tuiles en soute par ressource, dans l'ordre du catalogue.
+func _cargo_tiles() -> Dictionary[String, int]:
+	var tiles: Dictionary[String, int] = {}
+	for resource_id: String in GameData.get_resource_ids():
+		var mass: int = GameData.get_resource_mass(resource_id)
+		var units: int = GameState.get_cargo_units(resource_id)
+		if mass > 0 and units >= mass:
+			@warning_ignore("integer_division")
+			tiles[resource_id] = units / mass
+	return tiles
+
+
+## Plus forts restes, en entiers : quote-part `tuiles × to_lose ÷ total`.
+func _apportion(tiles: Dictionary[String, int], total: int, to_lose: int) -> Dictionary[String, int]:
+	var shares: Dictionary[String, int] = {}
+	var order: Array[String] = []
+	var given: int = 0
+	for resource_id: String in tiles:
+		@warning_ignore("integer_division")
+		shares[resource_id] = tiles[resource_id] * to_lose / total
+		given += shares[resource_id]
+		order.append(resource_id)
+	# Tri stable par reste décroissant : `sort_custom` n'étant pas stable, l'ordre
+	# du catalogue départage explicitement les égalités.
+	var rank: Dictionary[String, int] = {}
+	for i: int in order.size():
+		rank[order[i]] = i
+	order.sort_custom(func(a: String, b: String) -> bool:
+		var rest_a: int = (tiles[a] * to_lose) % total
+		var rest_b: int = (tiles[b] * to_lose) % total
+		return rest_a > rest_b or (rest_a == rest_b and rank[a] < rank[b]))
+	for i: int in to_lose - given:
+		shares[order[i]] += 1
+	var result: Dictionary[String, int] = {}
+	for resource_id: String in tiles:
+		if shares[resource_id] > 0:
+			result[resource_id] = shares[resource_id]
+	return result
 
 
 func _is_collectable(resource_id: String) -> bool:

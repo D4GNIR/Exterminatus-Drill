@@ -9,7 +9,8 @@ extends PanelContainer
 ## Contraintes de conception, opposables à l'audit :
 ## [br]— **Visible si et seulement si** la foreuse est en zone de surface
 ## (`GameState.surface_zone_changed`, zone lue dans les ancrages par la foreuse,
-## `K3`) **et** que le jeu n'est pas figé. Le jeu n'est figé que par une modale
+## `K3`), que la foreuse est opérationnelle (hors transition de destruction,
+## `GameState.drill_operational_changed`, story 6.7) **et** que le jeu n'est pas figé. Le jeu n'est figé que par une modale
 ## ouverte — `UiModal.sync_pause()` est le seul écrivain de `paused` (story 4.4) :
 ## station ouverte, inventaire ou menu pause ouverts, l'indication disparaît.
 ## [br]— **Aucun sondage par image** : ce nœud est en `PROCESS_MODE_PAUSABLE`
@@ -33,6 +34,7 @@ const KEY_FORMAT: String = "[ %s ]"
 
 func _ready() -> void:
 	GameState.surface_zone_changed.connect(_on_surface_zone_changed)
+	GameState.drill_operational_changed.connect(_on_drill_operational_changed)
 	if ActionKeyLabel.for_action(ACTION_INTERACT).is_empty():
 		push_error("InteractHint — action « %s » sans touche clavier dans l'Input Map : indication sans touche." % ACTION_INTERACT)
 	_refresh()
@@ -41,6 +43,7 @@ func _ready() -> void:
 ## `GameState` est un autoload : il survit au HUD (même règle que `HUD.gd`, `C5`).
 func _exit_tree() -> void:
 	GameState.surface_zone_changed.disconnect(_on_surface_zone_changed)
+	GameState.drill_operational_changed.disconnect(_on_drill_operational_changed)
 
 
 func _notification(what: int) -> void:
@@ -52,7 +55,11 @@ func _on_surface_zone_changed(_in_zone: bool) -> void:
 	_refresh()
 
 
+func _on_drill_operational_changed(_operational: bool) -> void:
+	_refresh()
+
+
 func _refresh() -> void:
-	visible = GameState.is_in_surface_zone() and not get_tree().paused
+	visible = GameState.is_in_surface_zone() and GameState.is_drill_operational() and not get_tree().paused
 	if visible:
 		_key_label.text = KEY_FORMAT % ActionKeyLabel.for_action(ACTION_INTERACT)

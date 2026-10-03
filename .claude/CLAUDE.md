@@ -56,7 +56,7 @@ Chaque fichier doit comporter au moins :
 - Ne **pas** commiter la phase tant que les stories dev **et** la story d'audit ne sont pas **Terminée**. L'audit **Autorisé** suffit désormais à autoriser le commit.
 - Les critères **[H]** (rendu, ressenti de contrôle, équilibrage, audio, ergonomie) ne sont **jamais cochés par un agent** : ils restent **en attente** et sont tous vérifiés à la recette `7.8`. Chaque story liste ce qui reste à valider visuellement.
 - Les gates de tests humains des sprints 2 à 6 (`2.7`, `3.9`, `4.6`, `5.9`, `6.10`) sont au statut **Reportée** vers `7.8` : fichiers conservés, aucune renumérotation.
-- Exemples réels du projet : `0.4` audit → `0.5` revue **annulée** (`0.10`) · `1.7` audit → `1.8` tests **close sans exécution** · `2.6` audit, `2.7` **reportée** (`2.8`). Les numéros des phases ≥ 6 sont **prévisionnels** et se déplacent à chaque insertion de story : ne les recopie pas ici, **les numéros exacts font foi dans `stories/BACKLOG.md`**, tableau de la phase concernée.
+- Exemples réels du projet : `0.4` audit → `0.5` revue **annulée** (`0.10`) · `1.7` audit → `1.8` tests **close sans exécution** · `2.6` audit, `2.7` **reportée** (`2.8`). Les numéros des phases ≥ 7 sont **prévisionnels** et se déplacent à chaque insertion de story : ne les recopie pas ici, **les numéros exacts font foi dans `stories/BACKLOG.md`**, tableau de la phase concernée.
 
 ## Commits Git (obligatoire à la fin de chaque phase)
 
@@ -69,6 +69,7 @@ Chaque fichier doit comporter au moins :
   - **Corps** : liste à puces des stories incluses (`- 1.1 - Initialisation projet`, etc.) puis liste des artefacts principaux (fichiers créés/modifiés majeurs).
 - **Méthode** : utiliser un HEREDOC pour préserver le formatage multi-ligne.
 - **Pas de commit intermédiaire** au sein d'une phase, sauf si l'utilisateur le demande explicitement ou si une étape critique le justifie (à annoncer).
+- **Exception — phase 6 en deux sprints** (arbitrage `Q65` (b) du 2026-10-02, story `5.16`) : la phase 6 est découpée en deux sprints successifs, 6a « risque » puis 6b « narration », chacun clos par sa propre story d'audit. **Un commit est effectué à la fin de chaque sprint** de la phase 6, soit deux commits dans la phase. Pré-conditions du commit d'un sprint : toutes les stories **de ce sprint** et sa story d'audit au statut Terminée (numéros exacts : `stories/BACKLOG.md`, tableau de la phase 6). Titres : `Phase 6a — <nom du sprint>`, puis `Phase 6b — <nom du sprint>`.
 - **Pas de push automatique** : le push reste à l'initiative de l'utilisateur.
 
 Exemple de message de commit :
@@ -95,5 +96,5 @@ Artefacts :
 - Ne pas commencer un travail sans story associée.
 - Ne pas avancer plusieurs stories en parallèle.
 - Ne pas enchaîner sans pause sur la story suivante après avoir terminé la story courante.
-- Ne pas commiter au milieu d'une phase, sauf demande explicite.
+- Ne pas commiter au milieu d'une phase, sauf demande explicite (exception : fin du sprint 6a, voir « Commits Git »).
 - Ne pas pousser sur le remote sans demande explicite de l'utilisateur.

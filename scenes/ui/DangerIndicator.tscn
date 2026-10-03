@@ -1,0 +1,46 @@
+[gd_scene format=3 uid="uid://btl7flxkeeinq"]
+
+[ext_resource type="Script" uid="uid://b5iv77438vhfa" path="res://scripts/ui/DangerIndicator.gd" id="1_script"]
+
+[sub_resource type="Gradient" id="Gradient_edges"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_edges"]
+gradient = SubResource("Gradient_edges")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[node name="DangerIndicator" type="CanvasLayer"]
+script = ExtResource("1_script")
+
+[node name="Veil" type="ColorRect" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Edges" type="TextureRect" parent="."]
+self_modulate = Color(0, 0, 0, 0)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_edges")
+expand_mode = 1
+
+[node name="AmbienceA" type="AudioStreamPlayer" parent="."]
+volume_db = -80.0
+
+[node name="AmbienceB" type="AudioStreamPlayer" parent="."]
+volume_db = -80.0

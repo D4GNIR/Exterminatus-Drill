@@ -26,7 +26,7 @@
     },
     {
       "id": "promethium_brut",
-      "nom_affiche": "Promethium brut",
+      "nom_affiche": "Prométhium brut",
       "rarete": "peu_commune",
       "valeur_credits": 45,
       "hardness_min": 2,
@@ -59,7 +59,7 @@
     },
     {
       "id": "relique_xeno",
-      "nom_affiche": "Relique xeno",
+      "nom_affiche": "Relique xéno",
       "rarete": "exceptionnelle",
       "valeur_credits": 1000,
       "hardness_min": 5,

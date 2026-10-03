@@ -18,6 +18,11 @@ class_name FuelSystem
 ## `5.6`) — **à la même image**, sans remplir le réservoir : le plein reste une
 ## dépense de la station (CDC « Économie »). Le carburant courant n'est jamais
 ## réduit par un achat (`GameState.set_fuel_max()` ne le borne qu'à la baisse).
+## [br]— **Carburant au retour d'un échec** (story 6.7, `Q68` (a)) :
+## `raise_to_rescue_threshold()` porte le réservoir **jusqu'au** seuil de secours
+## de la station (`Q56`), s'il est inférieur — même donnée que `5.3`, lue et non
+## dupliquée. Appelé par `RecoverySystem` ; ce composant reste l'écrivain du
+## carburant hors station.
 ## [br]— **Aucune valeur de gameplay ici** (`D1`) : les deux taux de consommation
 ## et le seuil d'alerte viennent de `data/drill.json`.
 ## [br]— **N'écrit dans aucun autre nœud** (`C3`) : il mute `GameState` et publie
@@ -142,6 +147,21 @@ func consume_drilled_tile() -> void:
 	if _depleted:
 		return
 	_consume(_drilled_tile_consumption)
+
+
+## Story 6.7 — carburant au retour d'une destruction ou d'une panne sèche :
+## porté **jusqu'au** seuil de secours (`ratio × réservoir courant`, donnée
+## `station.seuil_secours_carburant_ratio` de `data/upgrades.json`, `Q56`),
+## jamais au-delà ; **inchangé** s'il est déjà au-dessus. La sortie de panne et
+## de seuil bas est constatée par `_on_fuel_changed()`, comme pour un plein.
+## Faux (rien d'écrit) si le bloc `station` a été rejeté — `GameData` l'a signalé.
+func raise_to_rescue_threshold() -> bool:
+	if not GameData.has_station_services():
+		return false
+	var threshold: float = GameData.get_rescue_fuel_ratio() * GameState.get_fuel_max()
+	if GameState.get_fuel() < threshold:
+		GameState.set_fuel(threshold)
+	return true
 
 
 func _consume(amount: float) -> void:

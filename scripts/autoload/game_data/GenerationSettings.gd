@@ -25,6 +25,7 @@ const ROOT_GENERATION: String = "generation"
 const ROOT_ANCHORS: String = "ancrages"
 const ROOT_STRATA: String = "strates"
 const ROOT_DEPTH_LAYERS: String = "couches_profondeur"
+const ROOT_LAYER_TRANSITION: String = "transition_paliers"
 const ROOT_ORE_DENSITY: String = "densites_minerai"
 const ROOT_LOOT: String = "loot"
 
@@ -55,6 +56,8 @@ const KEY_ANOMALY_ROW: String = "anomalie_rangee"
 const KEY_DEPTH_MAX_M: String = "profondeur_max_m"
 const KEY_DEPTH_MIN_M: String = "profondeur_min_m"
 const KEY_HARDNESS: String = "hardness"
+## Marge d'hystérésis du palier courant, en mètres (story 6.1).
+const KEY_HYSTERESIS_M: String = "marge_hysteresis_m"
 
 ## Sentinelle « jusqu'au fond de la carte » pour la dernière strate et le dernier
 ## palier de profondeur. Une borne négative ne peut pas être une profondeur réelle,
@@ -94,11 +97,18 @@ const STRATUM_SCHEMA: Dictionary = {
 }
 
 ## Un palier de profondeur — clé commune à la table de loot (§2.2) et à la courbe
-## de risque (§4.2), arbitrage Q30 : un seul découpage.
+## de risque (§4.2), arbitrage Q30 : un seul découpage. `nom_affiche` est le nom
+## de zone montré au joueur à la transition (story 6.1, `Q70` (a)).
 const DEPTH_LAYER_SCHEMA: Dictionary = {
 	DataValidator.KEY_ID: DataValidator.FieldKind.STRING,
+	DataValidator.KEY_NAME: DataValidator.FieldKind.STRING,
 	KEY_DEPTH_MIN_M: DataValidator.FieldKind.FLOAT,
 	KEY_DEPTH_MAX_M: DataValidator.FieldKind.FLOAT,
+}
+
+## Transition entre paliers (story 6.1) : marge d'hystérésis en mètres.
+const LAYER_TRANSITION_SCHEMA: Dictionary = {
+	KEY_HYSTERESIS_M: DataValidator.FieldKind.FLOAT,
 }
 
 var _validator: DataValidator
@@ -113,6 +123,9 @@ var _anchors: Dictionary[String, int] = {}
 var _strata: Array[Dictionary] = []
 var _depth_layers: Array[Dictionary] = []
 var _depth_layer_ids: Array[String] = []
+## Marge d'hystérésis du palier courant, en mètres. Négative tant qu'elle n'a pas
+## été acceptée : aucune marge n'est inventée (`D2`).
+var _layer_hysteresis_m: float = -1.0
 ## `palier_id` → (`resource_id` → probabilité par case creusée).
 var _ore_density: Dictionary[String, Dictionary] = {}
 ## Table de loot (story 3.6) : entrées dans l'ordre déclaré — cet ordre fait partie
@@ -143,6 +156,7 @@ func load_file() -> void:
 	_load_generation_block(root)
 	_load_strata(root)
 	_load_depth_layers(root)
+	_load_layer_transition(root)
 	_load_ore_density(root)
 	_load_loot(root)
 
@@ -261,6 +275,11 @@ func _load_depth_layers(root: Dictionary) -> void:
 		var layer_id: String = entry[DataValidator.KEY_ID]
 		if not _validator.accept_id(layer_id, ids, entry_context):
 			return
+		# Le nom de zone est affiché au joueur à la transition (story 6.1) : une
+		# couche sans nom n'est pas une couche anonyme, c'est une donnée fautive.
+		if String(entry[DataValidator.KEY_NAME]).strip_edges().is_empty():
+			_validator.report("%s : « %s » vide — le nom de zone est affiché au joueur, paliers rejetés." % [entry_context, DataValidator.KEY_NAME])
+			return
 		if not is_equal_approx(entry[KEY_DEPTH_MIN_M], expected_min):
 			_validator.report("%s : « %s » doit valoir %s pour que les paliers soient contigus (lu %s), paliers rejetés." % [entry_context, KEY_DEPTH_MIN_M, expected_min, entry[KEY_DEPTH_MIN_M]])
 			return
@@ -279,6 +298,30 @@ func _load_depth_layers(root: Dictionary) -> void:
 		accepted.append(entry)
 	_depth_layers.assign(accepted)
 	_depth_layer_ids.assign(ids)
+
+
+## Marge d'hystérésis du palier courant (story 6.1, critère 3). Bornes : strictement
+## positive — à zéro, une foreuse posée sur une frontière produirait une rafale de
+## transitions — et strictement inférieure à l'épaisseur du plus mince palier
+## borné — au-delà, remonter de la marge ferait sortir du palier voisin et la
+## règle de retour perdrait son sens. Validée **après** les paliers.
+func _load_layer_transition(root: Dictionary) -> void:
+	var context: String = "%s → %s" % [PATH, ROOT_LAYER_TRANSITION]
+	var block: Dictionary = _validator.accept_block(root, ROOT_LAYER_TRANSITION, LAYER_TRANSITION_SCHEMA, context)
+	if block.is_empty():
+		return
+	if _depth_layers.is_empty():
+		_validator.report("%s : les paliers de profondeur n'ont pas été chargés, marge rejetée." % context)
+		return
+	var margin: float = block[KEY_HYSTERESIS_M]
+	var thinnest: float = INF
+	for layer: Dictionary in _depth_layers:
+		if not is_equal_approx(layer[KEY_DEPTH_MAX_M], DEPTH_UNBOUNDED):
+			thinnest = minf(thinnest, float(layer[KEY_DEPTH_MAX_M]) - float(layer[KEY_DEPTH_MIN_M]))
+	if margin <= 0.0 or margin >= thinnest:
+		_validator.report("%s : « %s » (%s) doit être strictement positif et inférieur à l'épaisseur du plus mince palier (%s m), marge rejetée." % [context, KEY_HYSTERESIS_M, margin, thinnest])
+		return
+	_layer_hysteresis_m = margin
 
 
 # --- Chargement : densités de minerai -------------------------------------------
@@ -613,6 +656,14 @@ func get_depth_layer_count() -> int:
 	return _depth_layers.size()
 
 
+## `id` des paliers, de la surface vers le fond (copie). Lu par `ThreatSettings`
+## (story 6.6) : la courbe de risque se cale sur ce découpage, sans le dupliquer.
+func get_depth_layer_ids() -> Array[String]:
+	var ids: Array[String] = []
+	ids.assign(_depth_layer_ids)
+	return ids
+
+
 func get_depth_layer_at(depth_m: float) -> String:
 	for layer: Dictionary in _depth_layers:
 		var maximum: float = layer[KEY_DEPTH_MAX_M]
@@ -621,6 +672,48 @@ func get_depth_layer_at(depth_m: float) -> String:
 		if is_equal_approx(maximum, DEPTH_UNBOUNDED) or depth_m < maximum:
 			return layer[DataValidator.KEY_ID]
 	return ""
+
+
+## Nom de zone d'un palier, affiché au joueur (story 6.1). Chaîne vide et erreur
+## pour un palier inconnu : aucun nom inventé.
+func get_depth_layer_name(layer_id: String) -> String:
+	var index: int = _depth_layer_ids.find(layer_id)
+	if index < 0:
+		push_error("GameData — palier de profondeur inconnu : « %s » (voir %s)." % [layer_id, PATH])
+		return ""
+	return _depth_layers[index][DataValidator.KEY_NAME]
+
+
+func has_layer_transition() -> bool:
+	return not _depth_layers.is_empty() and _layer_hysteresis_m > 0.0
+
+
+func get_layer_hysteresis_m() -> float:
+	return _layer_hysteresis_m
+
+
+## Palier courant **avec hystérésis** (story 6.1, critère 3). Règle :
+## [br]— vers le **bas**, le palier change dès la frontière franchie — c'est la
+## frontière du loot (`Q30`) : descendre ne crée aucun écart entre les deux ;
+## [br]— vers le **haut**, la foreuse ne revient au palier moins profond qu'une
+## fois remontée de `marge_hysteresis_m` au-dessus de la frontière haute du palier
+## courant. Une oscillation autour d'une limite ne produit qu'une transition.
+## Un `current_id` inconnu ou vide (nouvelle partie) donne le palier brut. Fonction
+## **pure** des données et de ses arguments : l'état reste à l'appelant.
+## Marge rejetée au chargement (erreur déjà consignée) : palier brut, sans marge
+## inventée — la seule conséquence est un éventuel bégaiement, visible au test.
+func get_depth_layer_with_hysteresis(depth_m: float, current_id: String) -> String:
+	var raw_id: String = get_depth_layer_at(depth_m)
+	if not has_layer_transition():
+		return raw_id
+	var current_index: int = _depth_layer_ids.find(current_id)
+	var raw_index: int = _depth_layer_ids.find(raw_id)
+	if current_index < 0 or raw_index < 0 or raw_index >= current_index:
+		return raw_id
+	var current_min: float = _depth_layers[current_index][KEY_DEPTH_MIN_M]
+	if depth_m < current_min - _layer_hysteresis_m:
+		return raw_id
+	return current_id
 
 
 func get_ore_density(layer_id: String, resource_id: String) -> float:

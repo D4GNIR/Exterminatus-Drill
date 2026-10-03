@@ -11,8 +11,8 @@ extends Control
 ## Contraintes de conception, opposables à l'audit :
 ## [br]— **Ouverture** (`Q54` (b)) : sur l'action `interact`, **seulement** si la
 ## foreuse est dans la zone de surface (`GameState.is_in_surface_zone()`, zone
-## lue dans les ancrages de `data/generation.json`, `K3`) et qu'aucune autre
-## modale n'est ouverte. Jamais sous terre, jamais automatiquement.
+## lue dans les ancrages de `data/generation.json`, `K3`), hors destruction (6.7),
+## et qu'aucune autre modale n'est ouverte. Jamais sous terre, jamais automatiquement.
 ## [br]— **Fermeture** (`Q62` (a)) : sur `interact` (bascule, modèle de
 ## `toggle_inventory`) **et** sur `pause`. Une seule pression ferme : le menu
 ## pause, qui reçoit l'appui le premier, le laisse à la modale ouverte (protocole
@@ -214,7 +214,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _can_open() -> bool:
-	return GameState.is_in_surface_zone() and not UiModal.is_other_open(self)
+	return GameState.is_in_surface_zone() and GameState.is_drill_operational() and not UiModal.is_other_open(self)
 
 
 func _open() -> void:

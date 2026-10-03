@@ -3,7 +3,7 @@ extends RefCounted
 
 ## Chargeur et paramètres de `data/drill.json` — physique, carburant, blindage,
 ## caméra, forage, retour audiovisuel et messages de bord (stories 2.2 à 4.2,
-## découpé de `GameData` par la story 5.11).
+## découpé de `GameData` par la story 5.11), rapatriement après un échec (6.7).
 ##
 ## Une seule responsabilité : lire, valider et servir ce fichier. Instancié
 ## **uniquement** par l'autoload `GameData`, qui reste la façade publique.
@@ -23,6 +23,7 @@ const ROOT_CAMERA: String = "camera"
 const ROOT_DRILLING: String = "forage"
 const ROOT_FEEDBACK: String = "retour"
 const ROOT_MESSAGES: String = "messages"
+const ROOT_RECOVERY: String = "rapatriement"
 
 # Physique de la foreuse (story 2.2, arbitrage Q15). Toutes ces grandeurs sont en
 # pixels et en secondes, sauf le coefficient de freinage (sans unité) et le
@@ -74,6 +75,17 @@ const KEY_ARMOR_IMPACT_THRESHOLD: String = "seuil_impact_px_s"
 const KEY_ARMOR_DAMAGE_PER_SPEED: String = "degats_par_px_s"
 const KEY_ARMOR_LOW_RATIO: String = "seuil_alerte_ratio"
 const KEY_ARMOR_DESTRUCTION_DURATION: String = "duree_destruction_s"
+
+# Rapatriement après une destruction ou une panne sèche hors zone de surface
+# (story 6.7, `Q66` (b), `Q68` (a)). Le seuil de carburant au retour n'est pas
+# ici : c'est le seuil de secours de la station (`Q56`, data/upgrades.json).
+
+## Part des tuiles de la soute perdue à l'échec, dans `]0, 1[` (`M3`).
+const KEY_RECOVERY_CARGO_LOSS: String = "fraction_cargo_perdue"
+## Fraction de `blindage_max` garantie au retour, dans `]0, 1[` (`Q68` (a)).
+const KEY_RECOVERY_ARMOR_RATIO: String = "fraction_blindage_retour"
+## Durée de panne sèche hors zone de surface avant le rapatriement, ≥ 0 s.
+const KEY_RECOVERY_STRANDED_DELAY: String = "delai_panne_seche_s"
 
 const KEY_CAMERA_SMOOTHING: String = "amortissement_position"
 const KEY_CAMERA_ZOOM: String = "zoom"
@@ -143,6 +155,17 @@ const ARMOR_SCHEMA: Dictionary = {
 	KEY_ARMOR_DESTRUCTION_DURATION: DataValidator.FieldKind.FLOAT,
 }
 
+## Rapatriement (story 6.7). Les deux fractions sont dans `]0, 1[` : une perte
+## de cargo à 1 serait totale (`M3 [B]`), à 0 une perte nulle déguisée ; un
+## blindage de retour à 0 enchaînerait les destructions, à 1 serait la remise à
+## neuf gratuite que `Q68` écarte. Le délai peut valoir 0 (rapatriement immédiat,
+## « éventuel délai » de `Q66` (b)), jamais moins.
+const RECOVERY_SCHEMA: Dictionary = {
+	KEY_RECOVERY_CARGO_LOSS: DataValidator.FieldKind.FLOAT,
+	KEY_RECOVERY_ARMOR_RATIO: DataValidator.FieldKind.FLOAT,
+	KEY_RECOVERY_STRANDED_DELAY: DataValidator.FieldKind.FLOAT,
+}
+
 ## Paramètres de suivi de la caméra. Amortissement et zoom strictement positifs :
 ## un zoom nul annulerait la projection, un amortissement nul figerait la caméra.
 const CAMERA_SCHEMA: Dictionary = {
@@ -162,6 +185,7 @@ var _camera: Dictionary[String, float] = {}
 var _drilling: Dictionary[String, float] = {}
 var _feedback: Dictionary[String, float] = {}
 var _messages: Dictionary[String, float] = {}
+var _recovery: Dictionary[String, float] = {}
 
 
 func _init(validator: DataValidator) -> void:
@@ -181,6 +205,7 @@ func load_file() -> void:
 	_load_block(root, ROOT_DRILLING, DRILLING_SCHEMA, _drilling)
 	_load_block(root, ROOT_FEEDBACK, FEEDBACK_SCHEMA, _feedback)
 	_load_block(root, ROOT_MESSAGES, MESSAGES_SCHEMA, _messages)
+	_load_block(root, ROOT_RECOVERY, RECOVERY_SCHEMA, _recovery)
 
 
 ## Nombre de champs chargés d'un bloc — trace de chargement de `GameData`.
@@ -200,6 +225,8 @@ func get_block_field_count(root_key: String) -> int:
 			return _feedback.size()
 		ROOT_MESSAGES:
 			return _messages.size()
+		ROOT_RECOVERY:
+			return _recovery.size()
 	push_error("GameData — bloc inconnu de %s : « %s »." % [PATH, root_key])
 	return 0
 
@@ -236,6 +263,8 @@ func _accept_drill_bounds(block: Dictionary, root_key: String, context: String) 
 			return _accept_feedback_bounds(block, context)
 		ROOT_MESSAGES:
 			return _accept_messages_bounds(block, context)
+		ROOT_RECOVERY:
+			return _accept_recovery_bounds(block, context)
 	# Aucun contrôle de bornes déclaré pour ce bloc. Le rejeter en silence
 	# rendrait le défaut indiagnosticable : un bloc ajouté sans sa validation
 	# disparaîtrait sans un mot, alors que tout le chargeur repose sur l'échec
@@ -318,6 +347,18 @@ func _accept_messages_bounds(block: Dictionary, context: String) -> bool:
 	var count: float = block[KEY_MESSAGE_MAX]
 	if count < 1.0 or not is_equal_approx(count, roundf(count)):
 		_reject(context, "champ « %s » doit être un entier supérieur ou égal à 1 (lu : %s)" % [KEY_MESSAGE_MAX, count])
+		return false
+	return true
+
+
+func _accept_recovery_bounds(block: Dictionary, context: String) -> bool:
+	for field: String in [KEY_RECOVERY_CARGO_LOSS, KEY_RECOVERY_ARMOR_RATIO]:
+		var ratio: float = block[field]
+		if ratio <= 0.0 or ratio >= 1.0:
+			_reject(context, "champ « %s » doit être dans ]0, 1[ (lu : %s)" % [field, ratio])
+			return false
+	if block[KEY_RECOVERY_STRANDED_DELAY] < 0.0:
+		_reject(context, "champ « %s » ne peut pas être négatif (lu : %s)" % [KEY_RECOVERY_STRANDED_DELAY, block[KEY_RECOVERY_STRANDED_DELAY]])
 		return false
 	return true
 
@@ -450,3 +491,16 @@ func get_message_max() -> int:
 		push_error("GameData — nombre de messages de bord indisponible (voir %s)." % PATH)
 		return 0
 	return roundi(_messages[KEY_MESSAGE_MAX])
+
+
+# --- Rapatriement -------------------------------------------------------------
+
+func has_recovery() -> bool:
+	return _recovery.size() == RECOVERY_SCHEMA.size()
+
+
+func get_recovery_value(field: String) -> float:
+	if not _recovery.has(field):
+		push_error("GameData — paramètre de rapatriement absent : « %s » (voir %s)." % [field, PATH])
+		return 0.0
+	return _recovery[field]

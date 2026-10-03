@@ -6,9 +6,16 @@ class_name ArmorSystem
 ## **Seul point d'entrée de dégâts du jeu** (point d'audit `M1`) : aucun autre
 ## nœud ne mute le blindage de `GameState`. La **réparation** payée à la station
 ## (story 5.3) passe aussi par ce composant (`repair()`) : tous les écrivains du
-## blindage restent ici, et le contrôle `M1` reste littéral. Les menaces de la phase 6 (§4.2 de
-## l'amendement) passeront par ce même composant, avec leurs propres sources —
-## elles s'**ajoutent** aux dégâts d'impact, elles ne les remplacent pas.
+## blindage restent ici, et le contrôle `M1` reste littéral. **Deux familles de
+## dégâts** (`Q20`) : l'impact (`apply_impact()`, story 2.5) et, depuis la story
+## 6.6, les menaces de la courbe de risque (`apply_threat()`, §4.2 de
+## l'amendement), tirées par `ThreatSystem` — la seconde s'**ajoute** à la
+## première, elle ne la remplace pas et ne la modifie pas (`M8`).
+## **Retour après un échec** (story 6.7, `Q68` (a) et sa précision de `6.14`) :
+## `restore_after_failure()` porte le blindage à la fraction de retour **s'il est
+## en dessous**, jamais plus bas — une seule règle pour la destruction et la
+## panne sèche, appelée par `RecoverySystem` et, à la sortie de destruction, par
+## ce composant lui-même (jamais opérationnel à blindage nul, `M4`).
 ##
 ## Contraintes de conception, opposables à l'audit :
 ## [br]— **La capacité de blindage n'est pas ici** : c'est la statistique
@@ -47,8 +54,14 @@ signal armor_low(ratio: float)
 signal armor_low_cleared()
 ## Émis à l'entrée dans l'état « foreuse détruite » : blindage nul.
 signal destruction_started()
-## Émis à la sortie de cet état, la foreuse redevenant pilotable.
+## Émis à la sortie de cet état, la foreuse redevenant pilotable, blindage déjà
+## relevé à la fraction de retour : `RecoverySystem` y enchaîne le rapatriement
+## (story 6.7) dans le même appel.
 signal destruction_finished()
+
+## Tolérance d'arithmétique flottante du plafond de `restore_after_failure()`.
+## Ce n'est pas une valeur de gameplay (`D1`) : un millionième de point.
+const ROUNDING_TOLERANCE: float = 0.000001
 
 ## Amélioration qui pilote `blindage_max`, résolue une fois depuis le catalogue :
 ## aucun `id` d'amélioration n'est écrit ici.
@@ -58,6 +71,10 @@ var _impact_threshold: float = 0.0
 var _damage_per_speed: float = 0.0
 var _low_ratio: float = 0.0
 var _destruction_duration: float = 0.0
+## Fraction de `blindage_max` garantie au retour d'un échec (story 6.7), dans
+## `]0, 1[`. Nulle si le bloc `rapatriement` a été rejeté : la foreuse détruite
+## reste alors dans l'état détruit — panne visible, jamais de remise à neuf.
+var _return_ratio: float = 0.0
 
 ## État « détruite » et son chronomètre. Ces deux variables portent la transition
 ## exigée par les points d'audit `M4` et `H3` : la foreuse est soit opérationnelle,
@@ -84,6 +101,10 @@ func _ready() -> void:
 	_damage_per_speed = GameData.get_armor_damage_per_speed()
 	_low_ratio = GameData.get_armor_low_ratio()
 	_destruction_duration = GameData.get_armor_destruction_duration()
+	if GameData.has_recovery_settings():
+		_return_ratio = GameData.get_recovery_armor_ratio()
+	else:
+		push_error("ArmorSystem — rapatriement non chargé depuis %s : une foreuse détruite le restera." % GameData.DRILL_PATH)
 	_configured = true
 	GameState.armor_changed.connect(_on_armor_changed)
 	# L'état initial est constaté, jamais émis : un enfant est prêt avant son
@@ -135,6 +156,20 @@ func apply_impact(speed: float) -> void:
 	GameState.set_armor(GameState.get_armor() - damage)
 
 
+## Rencontre hostile (story 6.6, `Q67` (a)) : `damage` points retirés **dans
+## l'instant**, montant lu en données par l'appelant (`ThreatSystem`), sans aucun
+## seuil — une menace n'est pas un choc. Refusée (faux, rien d'écrit) sans
+## réglages valides, pendant la transition de destruction (`M4`) ou pour un
+## montant non positif. Un blindage porté à zéro passe par l'état de destruction
+## existant, constaté par `_on_armor_changed()` comme pour un impact. Comme pour
+## l'impact, le niveau d'amélioration ne réduit pas les dégâts (`Q60` (a)).
+func apply_threat(damage: float) -> bool:
+	if not _configured or _destroyed or damage <= 0.0:
+		return false
+	GameState.set_armor(GameState.get_armor() - damage)
+	return true
+
+
 ## Réparation de `points` de blindage, décidée et payée par `EconomySystem`
 ## (story 5.3) : ce composant ne connaît **aucun prix**, il applique. Refusée
 ## (faux, rien d'écrit) pendant la transition de destruction — la foreuse n'y est
@@ -146,6 +181,27 @@ func repair(points: float) -> bool:
 	if _destroyed or points <= 0.0:
 		return false
 	GameState.set_armor(GameState.get_armor() + points)
+	return true
+
+
+## Story 6.7 — blindage au retour d'un échec (`Q68` (a), précision `6.14`) :
+## `max(blindage courant, plancher)`, avec `plancher = max(1, ⌈fraction × blindage_max⌉)`
+## — arrondi **au point supérieur**, donc toujours ≥ 1 ; jamais au-dessus du
+## maximum, la fraction étant < 1 et `GameState` bornant (`M7`). **Jamais
+## abaissé** : un blindage supérieur au plancher (panne sèche) est conservé, sans
+## écriture. Seul écrivain du blindage (`M1`). Permis pendant la transition de
+## destruction, contrairement à `repair()` : c'est elle qu'il clôt. Faux (rien
+## d'écrit) sans réglages valides ; vrai sinon, que le blindage ait changé ou non.
+func restore_after_failure() -> bool:
+	if not _configured or _return_ratio <= 0.0:
+		return false
+	var maximum: float = GameState.get_armor_max()
+	# La tolérance absorbe l'erreur d'arrondi binaire du produit (0,3 × 100 vaut
+	# 30,000000000000004) : sans elle, le plafond donnerait 31.
+	var floor_points: float = maxf(1.0, ceilf(_return_ratio * maximum - ROUNDING_TOLERANCE))
+	if GameState.get_armor() >= floor_points:
+		return true
+	GameState.set_armor(minf(floor_points, maximum))
 	return true
 
 
@@ -185,16 +241,18 @@ func _update_low_alert(ratio: float) -> void:
 	armor_low.emit(ratio)
 
 
-## Sortie de l'état détruit. **Traitement provisoire et volontairement minimal** :
-## le blindage est remis au maximum et la partie continue. Aucun autre état n'est
-## touché — soute (phase 3), crédits (phase 5) et niveaux d'amélioration restent
-## intacts, et il n'existe pas encore de sauvegarde (`7.4`). La conséquence réelle (perte d'une **fraction** du cargo, règle
-## « la perte n'est jamais totale » du §4.3) est l'objet de la story 6.7 : la
-## construire ici reviendrait à la refaire. L'ordre des deux lignes compte —
-## lever l'état **avant** de restaurer, sinon la restauration relancerait une
-## transition.
+## Sortie de l'état détruit (story 6.7, remplace le provisoire de `2.5` qui
+## remettait le blindage au maximum sur place). Le blindage est d'abord relevé
+## au plancher de retour (`restore_after_failure()`), **pendant** l'état détruit :
+## la foreuse ne redevient jamais pilotable à blindage nul, et cette écriture ne
+## peut pas relancer une transition. Puis l'état est levé et `destruction_finished`
+## émis : `RecoverySystem` y enchaîne, dans le même appel, la perte de cargo, le
+## carburant de secours et le rapatriement au point d'apparition — aucune image
+## ne voit la foreuse pilotable sur le lieu de sa destruction. Sans réglages de
+## rapatriement, la foreuse reste détruite (erreur signalée au démarrage).
 func _finish_destruction() -> void:
-	_destroyed = false
 	_destruction_elapsed = 0.0
-	GameState.set_armor(GameState.get_armor_max())
+	if not restore_after_failure():
+		return
+	_destroyed = false
 	destruction_finished.emit()

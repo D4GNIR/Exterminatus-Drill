@@ -10,7 +10,7 @@ extends Node
 ## **Façade unique** (story 5.11, `Q53` (a)) : la lecture et la validation de
 ## chaque fichier vivent dans un chargeur dédié de `scripts/autoload/game_data/`
 ## — `ResourceCatalog`, `UpgradeCatalog`, `EventCatalog`, `DrillSettings`,
-## `GenerationSettings` —, appuyé sur les outils partagés de `DataValidator`. Ce
+## `GenerationSettings`, `ThreatSettings`, `DangerIndicatorSettings` —, appuyé sur les outils partagés de `DataValidator`. Ce
 ## script ne fait que les construire, les charger dans l'ordre et leur déléguer.
 ## Les appelants ne connaissent que `GameData` : aucun ne construit ni ne lit un
 ## chargeur directement.
@@ -73,6 +73,12 @@ var _upgrades: UpgradeCatalog = UpgradeCatalog.new(_validator)
 var _events: EventCatalog = EventCatalog.new(_validator)
 var _drill: DrillSettings = DrillSettings.new(_validator)
 var _generation: GenerationSettings = GenerationSettings.new(_validator, _resources, _drill)
+## Courbe de risque (story 6.6) : bloc `menaces` de `generation.json`, calé sur
+## les paliers de `_generation`.
+var _threats: ThreatSettings = ThreatSettings.new(_validator, _generation)
+## Indicateur de danger non chiffré (story 6.8) : bloc `indicateur_danger` de
+## `generation.json`, calé sur les mêmes paliers.
+var _danger: DangerIndicatorSettings = DangerIndicatorSettings.new(_validator, _generation)
 
 
 func _init() -> void:
@@ -88,13 +94,16 @@ func _ready() -> void:
 
 
 ## Ordre imposé : `generation.json` se valide contre le catalogue des ressources
-## (minerais connus et actifs) et convertit ses tuiles avec `drill.json`.
+## (minerais connus et actifs) et convertit ses tuiles avec `drill.json` ; la
+## courbe de risque se valide contre ses paliers.
 func _load_all() -> void:
 	_resources.load_file()
 	_upgrades.load_file()
 	_events.load_file()
 	_drill.load_file()
 	_generation.load_file()
+	_threats.load_file()
+	_danger.load_file()
 
 
 # --- État du chargement -------------------------------------------------------
@@ -111,7 +120,7 @@ func get_errors() -> PackedStringArray:
 
 
 func get_load_summary() -> String:
-	return "GameData — ressources : %d (%d actives MVP) · améliorations : %d (%d actives MVP) · événements : %d (%d actifs MVP) · physique foreuse : %d champs · carburant : %d champs · blindage : %d · caméra : %d · forage : %d · retour : %d · messages : %d · monde : %d tuiles · ancrages : %d · strates : %d · paliers : %d · loot : %d entrées · erreurs : %d" % [
+	return "GameData — ressources : %d (%d actives MVP) · améliorations : %d (%d actives MVP) · événements : %d (%d actifs MVP) · physique foreuse : %d champs · carburant : %d champs · blindage : %d · caméra : %d · forage : %d · retour : %d · messages : %d · rapatriement : %d · monde : %d tuiles · ancrages : %d · strates : %d · paliers : %d · loot : %d entrées · menaces : %d paliers · indicateur de danger : %d paliers · erreurs : %d" % [
 		_resources.get_resource_ids().size(), _resources.get_mvp_resource_ids().size(),
 		_upgrades.get_upgrade_ids().size(), _upgrades.get_mvp_upgrade_ids().size(),
 		_events.get_event_ids().size(), _events.get_mvp_event_ids().size(),
@@ -122,11 +131,14 @@ func get_load_summary() -> String:
 		_drill.get_block_field_count(DrillSettings.ROOT_DRILLING),
 		_drill.get_block_field_count(DrillSettings.ROOT_FEEDBACK),
 		_drill.get_block_field_count(DrillSettings.ROOT_MESSAGES),
+		_drill.get_block_field_count(DrillSettings.ROOT_RECOVERY),
 		_generation.get_map_field_count(),
 		_generation.get_anchor_field_count(),
 		_generation.get_strata_count(),
 		_generation.get_depth_layer_count(),
 		_generation.get_loot_entry_ids().size(),
+		_threats.get_layer_count(),
+		_danger.get_layer_count(),
 		_validator.get_error_count(),
 	]
 
@@ -463,6 +475,30 @@ func get_armor_destruction_duration() -> float:
 	return _drill.get_armor_value(DrillSettings.KEY_ARMOR_DESTRUCTION_DURATION)
 
 
+# --- Rapatriement -------------------------------------------------------------
+# Story 6.7 (`Q66` (b), `Q68` (a)) : conséquence de la destruction et de la panne
+# sèche hors zone de surface. Le carburant au retour est le seuil de secours de
+# la station (`get_rescue_fuel_ratio()`), lu et non redéclaré.
+
+func has_recovery_settings() -> bool:
+	return _drill.has_recovery()
+
+
+## Part des tuiles de la soute perdue à l'échec, dans `]0, 1[` (`M3`).
+func get_recovery_cargo_loss_fraction() -> float:
+	return _drill.get_recovery_value(DrillSettings.KEY_RECOVERY_CARGO_LOSS)
+
+
+## Fraction de `blindage_max` garantie au retour, dans `]0, 1[` (`Q68` (a)).
+func get_recovery_armor_ratio() -> float:
+	return _drill.get_recovery_value(DrillSettings.KEY_RECOVERY_ARMOR_RATIO)
+
+
+## Secondes de panne sèche hors zone de surface avant le rapatriement, ≥ 0.
+func get_recovery_stranded_delay() -> float:
+	return _drill.get_recovery_value(DrillSettings.KEY_RECOVERY_STRANDED_DELAY)
+
+
 # --- Caméra et bords de carte -------------------------------------------------
 
 func has_camera_settings() -> bool:
@@ -614,6 +650,25 @@ func get_depth_layer_at(depth_m: float) -> String:
 	return _generation.get_depth_layer_at(depth_m)
 
 
+## Nom de zone d'un palier, affiché au joueur à la transition (story 6.1, `Q70`
+## (a)) : porté par la couche de `couches_profondeur`, jamais par le code.
+func get_depth_layer_name(layer_id: String) -> String:
+	return _generation.get_depth_layer_name(layer_id)
+
+
+## Vrai si la marge d'hystérésis du palier courant a été acceptée (story 6.1).
+func has_layer_transition() -> bool:
+	return _generation.has_layer_transition()
+
+
+## Palier courant **avec hystérésis** (story 6.1) : plus profond dès la frontière
+## franchie, moins profond seulement après une remontée de
+## `transition_paliers.marge_hysteresis_m` au-dessus de la frontière. Fonction
+## pure : `GameState` en conserve le résultat, seul état de l'affaire.
+func get_depth_layer_with_hysteresis(depth_m: float, current_id: String) -> String:
+	return _generation.get_depth_layer_with_hysteresis(depth_m, current_id)
+
+
 ## Probabilité qu'une case de ce palier porte ce minerai. `0.0` pour un minerai non
 ## déclaré sur ce palier : c'est une absence légitime, pas une erreur — un minerai
 ## profond n'a pas à figurer en surface.
@@ -625,6 +680,80 @@ func get_ore_density(layer_id: String, resource_id: String) -> float:
 ## c'est cet ordre qui rend le tirage du générateur **reproductible**.
 func get_ore_densities(layer_id: String) -> Dictionary[String, float]:
 	return _generation.get_ore_densities(layer_id)
+
+
+# --- Courbe de risque (story 6.6) ---------------------------------------------
+# Bloc `menaces` de `generation.json`, sur les paliers de `couches_profondeur`
+# (`Q30`). Aucune probabilité ni dégât ailleurs que dans ces données (`M2`, `D1`).
+
+## Vrai si la courbe de risque a été acceptée **en entier**.
+func has_threat_settings() -> bool:
+	return _threats.has_threat_settings()
+
+
+## Graine du générateur de menace, **distinct** de celui du terrain et du loot (`M6`).
+func get_threat_seed() -> int:
+	return _threats.get_seed()
+
+
+## Durée du retour visuel bref d'une rencontre, en secondes.
+func get_threat_feedback_duration() -> float:
+	return _threats.get_feedback_duration()
+
+
+## Probabilité de rencontre hostile par tuile détruite, constante dans le palier.
+func get_threat_probability(layer_id: String) -> float:
+	return _threats.get_probability(layer_id)
+
+
+## Type de menace propre au palier (`Q67` (a) : un type par palier).
+func get_layer_threat_id(layer_id: String) -> String:
+	return _threats.get_layer_threat_id(layer_id)
+
+
+## Nom de la menace, montré dans le message de bord — jamais un chiffre (`M5`).
+func get_threat_name(threat_id: String) -> String:
+	return _threats.get_threat_name(threat_id)
+
+
+## Points de blindage retirés par une rencontre, appliqués par `ArmorSystem` (`M1`).
+func get_threat_damage(threat_id: String) -> float:
+	return _threats.get_threat_damage(threat_id)
+
+
+# --- Indicateur de danger (story 6.8) ----------------------------------------
+# Bloc `indicateur_danger` de `generation.json`, sur les paliers de
+# `couches_profondeur` (`Q30`). Couleurs, opacités, flux et volumes : aucun texte,
+# aucun chiffre montré au joueur (`M5`).
+
+## Vrai si l'indicateur a été accepté **en entier**.
+func has_danger_indicator_settings() -> bool:
+	return _danger.has_settings()
+
+
+## Durée du fondu de la teinte et du fondu enchaîné des ambiances, en secondes.
+func get_danger_transition_duration() -> float:
+	return _danger.get_transition_duration()
+
+
+## Voile uniforme du palier (teinte, alpha = opacité du voile).
+func get_danger_veil_color(layer_id: String) -> Color:
+	return _danger.get_veil_color(layer_id)
+
+
+## Assombrissement teinté des bords de l'écran du palier.
+func get_danger_edge_color(layer_id: String) -> Color:
+	return _danger.get_edge_color(layer_id)
+
+
+## Chemin `res://` du flux d'ambiance en boucle du palier.
+func get_danger_ambience_path(layer_id: String) -> String:
+	return _danger.get_ambience_path(layer_id)
+
+
+## Volume de l'ambiance du palier, en décibels, sous celui des alertes.
+func get_danger_ambience_volume_db(layer_id: String) -> float:
+	return _danger.get_ambience_volume_db(layer_id)
 
 
 # --- Événements narratifs -----------------------------------------------------

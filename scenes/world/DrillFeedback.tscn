@@ -1,8 +1,9 @@
-[gd_scene load_steps=8 format=3 uid="uid://c3drillfeedbk7"]
+[gd_scene load_steps=10 format=3 uid="uid://c3drillfeedbk7"]
 
 [ext_resource type="Script" uid="uid://l12xo6qpo4js" path="res://scripts/systems/DrillFeedback.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://w261oirjoiuw" path="res://assets/sprites/fx_drill_cracks_32x32.png" id="2_cracks"]
 [ext_resource type="AudioStream" uid="uid://bh50g83xyny7c" path="res://assets/audio/sfx_rare_drop.wav" id="3_rare"]
+[ext_resource type="AudioStream" uid="uid://b776lr7kp25sr" path="res://assets/audio/sfx_threat_encounter.wav" id="4_threat"]
 
 [sub_resource type="Gradient" id="Gradient_debris"]
 offsets = PackedFloat32Array(0, 1)
@@ -11,6 +12,10 @@ colors = PackedColorArray(0.55, 0.4, 0.26, 1, 0.3, 0.22, 0.15, 0)
 [sub_resource type="Gradient" id="Gradient_sparks"]
 offsets = PackedFloat32Array(0, 0.5, 1)
 colors = PackedColorArray(1, 0.95, 0.6, 1, 1, 0.65, 0.15, 1, 0.9, 0.2, 0.1, 0)
+
+[sub_resource type="Gradient" id="Gradient_threat"]
+offsets = PackedFloat32Array(0, 0.6, 1)
+colors = PackedColorArray(0.95, 0.25, 0.18, 1, 0.55, 0.08, 0.06, 1, 0.2, 0.05, 0.05, 0)
 
 [sub_resource type="Gradient" id="Gradient_light"]
 offsets = PackedFloat32Array(0, 1)
@@ -73,3 +78,30 @@ color_ramp = SubResource("Gradient_sparks")
 
 [node name="RareDropAudio" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("3_rare")
+
+[node name="Threat" type="Node2D" parent="."]
+visible = false
+
+[node name="Light" type="PointLight2D" parent="Threat"]
+color = Color(0.9, 0.18, 0.12, 1)
+energy = 2.2
+texture = SubResource("GradientTexture2D_light")
+texture_scale = 2.5
+
+[node name="Burst" type="CPUParticles2D" parent="Threat"]
+emitting = false
+amount = 32
+lifetime = 0.6
+one_shot = true
+explosiveness = 1.0
+direction = Vector2(0, -1)
+spread = 180.0
+gravity = Vector2(0, 300)
+initial_velocity_min = 80.0
+initial_velocity_max = 200.0
+scale_amount_min = 2.0
+scale_amount_max = 4.0
+color_ramp = SubResource("Gradient_threat")
+
+[node name="ThreatAudio" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("4_threat")
